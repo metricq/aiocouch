@@ -1,0 +1,1 @@
+from .couchdb import CouchDB
