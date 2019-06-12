@@ -27,7 +27,7 @@ async def couchdb():
 
 @pytest.fixture
 async def database(couchdb):
-    database = await couchdb.get_database("aiocouch_test_fixture_database")
+    database = await couchdb.create("aiocouch_test_fixture_database")
 
     yield database
 
@@ -36,18 +36,26 @@ async def database(couchdb):
 
 @pytest.fixture
 async def filled_database(database):
-    doc = await database.get("foo")
+    doc = await database.create("foo")
     doc["bar"] = True
+    await doc.save()
 
-    doc = await database.get("foo2")
+    doc = await database.create("foo2")
     doc["bar"] = True
+    await doc.save()
 
-    doc = await database.get("baz")
+    doc = await database.create("baz")
     doc["bar"] = False
+    await doc.save()
 
-    doc = await database.get("baz2")
+    doc = await database.create("baz2")
     doc["bar"] = True
-
-    await database.save_all()
+    await doc.save()
 
     yield database
+
+
+@pytest.fixture
+async def doc(database):
+    doc = await database.create("foo")
+    yield doc

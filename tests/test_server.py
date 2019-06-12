@@ -6,28 +6,42 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_list_databases(event_loop, couchdb):
-    dbs = await couchdb.list_databases()
+    dbs = await couchdb.keys()
 
     assert "aiocouch_test_fixture_database" not in dbs
 
 
 async def test_list_database(event_loop, couchdb, database):
 
-    dbs = await couchdb.list_databases()
+    dbs = await couchdb.keys()
     assert "aiocouch_test_fixture_database" in dbs
 
 
-async def test_database_cache(couchdb, database):
-    assert database == await couchdb.get_database("aiocouch_test_fixture_database")
-
-
 async def test_create_delete_database(event_loop, couchdb):
-    database = await couchdb.get_database("aiocouch_test_fixture_database2")
+    database = await couchdb.create("aiocouch_test_fixture_database2")
 
-    dbs = await couchdb.list_databases()
+    dbs = await couchdb.keys()
     assert "aiocouch_test_fixture_database2" in dbs
 
     await database.delete()
 
-    dbs = await couchdb.list_databases()
+    dbs = await couchdb.keys()
     assert "aiocouch_test_fixture_database2" not in dbs
+
+
+async def test_create_for_existing(couchdb, database):
+    with pytest.raises(KeyError):
+        await couchdb.create(database.id)
+
+
+async def test_create_for_existing_ok(couchdb, database):
+    await couchdb.create(database.id, exists_ok=True)
+
+
+async def test_get_for_existing(couchdb, database):
+    await couchdb[database.id]
+
+
+async def test_get_for_non_existing(couchdb, database):
+    with pytest.raises(KeyError):
+        await couchdb[database.id + "not_existing"]

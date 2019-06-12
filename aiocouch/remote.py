@@ -79,6 +79,7 @@ class RemoteServer(object):
         # print(f"Received from {resp.method} {resp.url}: {resp}")
         # print(f"{resp.request_info}")
         if resp.status in range(200, 300):
+
             return
 
         if resp.status == 302:
@@ -87,7 +88,7 @@ class RemoteServer(object):
         url = resp.url
 
         if resp.status == 404:
-            raise RuntimeError(
+            raise KeyError(
                 f"The request ({method} {url}) returned an error '{resp.reason}' ({resp.status})"
             )
         elif resp.status in range(400, 500):
@@ -152,7 +153,7 @@ class RemoteDatabase(object):
         try:
             await self._remote._head(self.end_point)
             return True
-        except RuntimeError:
+        except KeyError:
             return False
 
     async def _get(self):
@@ -196,7 +197,7 @@ class RemoteDocument(object):
         try:
             await self._database._remote._head(self.endpoint)
             return True
-        except RuntimeError:
+        except KeyError:
             return False
 
     async def _get(self, **params):
@@ -216,3 +217,29 @@ class RemoteDocument(object):
 
     async def _create(self, data, **params):
         await self._database._remote._post(f"/{self._database.id}", data, params)
+
+
+class RemoteView(object):
+    def __init__(self, database, ddoc, id):
+        self._database = database
+        self.ddoc = ddoc
+        self.id = id
+
+    @property
+    def endpoint(self):
+        return f"/{self._database.id}/_design/{self.ddoc}/_view/{self.id}"
+
+    async def _get(self, **params):
+        return await self._database._remote._get(self.endpoint, params)
+
+    async def _post(self, keys, **params):
+        return await self._database._remote._post(self.endpoint, {"keys": keys}, params)
+
+
+class RemoteAllDocsView(RemoteView):
+    def __init__(self, database):
+        super().__init__(database, None, "_all_docs")
+
+    @property
+    def endpoint(self):
+        return f"/{self._database.id}/_all_docs"

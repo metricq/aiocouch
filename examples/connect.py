@@ -8,25 +8,10 @@ async def main_with():
         "http://localhost:5984", user="admin", password="admin"
     ) as couchdb:
 
-        print(await couchdb._server._get("/"))
+        database = await couchdb["config"]
 
-        database = await couchdb.get_database("config")
-        doc = await database.get("db-hta")
-        print(doc)
-
-        metadata = await couchdb.get_database("metadata")
-
-        docs = 0
-        async for doc in metadata.find({"wurst": False}):
-            doc["bockmist"] = True
-            docs += 1
-
-        print(f"received {docs} docs")
-
-        async for doc in metadata.get_all():
-            doc["tummy"] = "jummy"
-
-        await metadata.save_all()
+        async for doc in database.docs(["db-hta"]):
+            print(doc)
 
 
 if __name__ == "__main__":

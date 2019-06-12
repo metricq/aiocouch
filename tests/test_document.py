@@ -5,7 +5,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_save(database):
-    doc = await database.get("foo42")
+    doc = await database.create("foo42")
     doc["bar"] = True
     await doc.save()
 
@@ -16,7 +16,7 @@ async def test_save(database):
 
 
 async def test_fetch_dirty_document(database):
-    doc = await database.get("foo")
+    doc = await database.create("foo")
 
     doc["dirty"] = "shitz"
     with pytest.raises(ValueError):
@@ -24,7 +24,21 @@ async def test_fetch_dirty_document(database):
 
 
 async def test_get_for_existing(filled_database):
-    doc = await filled_database.get("foo")
+    doc = await filled_database["foo"]
+
+    assert doc["bar"] is True
+    assert doc["_id"] == doc.id == "foo"
+    assert doc["_rev"].startswith("1-")
+    assert doc._dirty_cache is False
+
+
+async def test_create_for_existing(filled_database):
+    with pytest.raises(KeyError):
+        await filled_database.create("foo")
+
+
+async def test_create_for_existing_exists_true(filled_database):
+    doc = await filled_database.create("foo", exists_ok=True)
 
     assert doc["bar"] is True
     assert doc["_id"] == doc.id == "foo"
@@ -33,15 +47,12 @@ async def test_get_for_existing(filled_database):
 
 
 async def test_get_for_non_existing(database):
-    doc = await database.get("foo")
-
-    assert doc["_id"] == doc.id == "foo"
-    assert doc._dirty_cache is True
-    assert "_rev" not in doc
+    with pytest.raises(KeyError):
+        await database["foo"]
 
 
 async def test_save_with_data(database):
-    doc = await database.get("foo")
+    doc = await database.create("foo")
 
     doc["blub"] = "blubber"
 
@@ -51,9 +62,7 @@ async def test_save_with_data(database):
     assert doc["_rev"].startswith("1-")
     assert doc._dirty_cache is False
 
-    del database._document_cache["foo"]
-
-    doc = await database.get("foo")
+    doc = await database["foo"]
     assert doc["_id"] == doc.id == "foo"
     assert doc["_rev"].startswith("1-")
     assert doc["blub"] == "blubber"
@@ -61,7 +70,7 @@ async def test_save_with_data(database):
 
 
 async def test_update(filled_database):
-    doc = await filled_database.get("foo")
+    doc = await filled_database["foo"]
 
     assert doc["_rev"].startswith("1-")
     assert doc._dirty_cache is False
@@ -78,9 +87,7 @@ async def test_update(filled_database):
     assert doc["_rev"].startswith("2-")
     assert doc._dirty_cache is False
 
-    del filled_database._document_cache["foo"]
-
-    doc = await filled_database.get("foo")
+    doc = await filled_database["foo"]
     assert doc["_id"] == doc.id == "foo"
     assert doc["_rev"].startswith("2-")
     assert doc._dirty_cache is False
@@ -89,7 +96,7 @@ async def test_update(filled_database):
 
 
 async def test_delete(filled_database):
-    doc = await filled_database.get("foo")
+    doc = await filled_database["foo"]
 
     await doc.delete()
 
@@ -100,7 +107,7 @@ async def test_delete(filled_database):
 
 
 async def test_delete_dirty(filled_database):
-    doc = await filled_database.get("foo")
+    doc = await filled_database["foo"]
 
     doc["fuzzy"] = "lizzy"
 
@@ -109,7 +116,7 @@ async def test_delete_dirty(filled_database):
 
 
 async def test_copy(filled_database):
-    foo = await filled_database.get("foo")
+    foo = await filled_database["foo"]
     foo_copy = await foo.copy("foo_copy")
 
     assert foo_copy._cached_data.keys() == foo._cached_data.keys()
@@ -117,32 +124,35 @@ async def test_copy(filled_database):
         if key == "_id":
             continue
         assert foo_copy[key] == foo[key]
-    assert foo_copy == await filled_database.get("foo_copy")
 
 
 async def test_fetch_non_existant(database):
-    doc = await database.get("foo")
-
-    with pytest.raises(RuntimeError):
-        await doc.fetch(discard_changes=True)
+    with pytest.raises(KeyError):
+        await database["foo"]
 
 
-async def test_multiple_doc_keep_in_sync(filled_database):
-    from aiocouch.document import Document
+async def test_doc_update(doc):
+    assert "test" not in doc
 
-    doc1 = await filled_database.get("foo")
+    doc.update({"test": "value"})
 
-    new_ref = None
-    doc2 = None
+    assert "test" in doc
+    assert doc["test"] == "value"
 
-    async for doc in filled_database.find({"_id": "foo"}):
-        assert isinstance(doc, Document)
 
-        doc["blub"] = "blubber"
-        await doc.save()
-        new_ref = doc["_rev"]
-        doc2 = doc
+async def test_doc_items_keys_values(doc):
+    assert list(doc.keys()) == ["_id"]
+    assert list(doc.values()) == ["foo"]
+    assert dict(doc.items()) == {"_id": "foo"}
 
-    assert new_ref is not None
-    assert doc2 is not None
-    assert doc1 == doc2
+
+async def test_filled_doc_items_keys_values(doc):
+    doc.update({"test": "value"})
+
+    assert list(doc.keys()) == ["_id", "test"]
+    assert list(doc.values()) == ["foo", "value"]
+    assert dict(doc.items()) == {"_id": "foo", "test": "value"}
+
+
+async def test_repr(doc):
+    print(doc)

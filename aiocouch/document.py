@@ -61,7 +61,7 @@ class Document(RemoteDocument):
     async def copy(self, new_id):
         await self._copy(new_id)
 
-        return await self._database.get(new_id)
+        return await self._database[new_id]
 
     def _update_rev_after_save(self, rev):
         self._cached_data["_rev"] = rev
@@ -84,6 +84,18 @@ class Document(RemoteDocument):
 
     def __contains__(self, key):
         return key in self._cached_data
+
+    def update(self, data):
+        self._cached_data.update(data)
+
+    def items(self):
+        return self._cached_data.items()
+
+    def keys(self):
+        return self._cached_data.keys()
+
+    def values(self):
+        return self._cached_data.values()
 
     # TODO, do we need a del checking for dirty caches?
 

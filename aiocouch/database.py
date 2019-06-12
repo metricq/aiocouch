@@ -30,13 +30,12 @@
 
 from .remote import RemoteDatabase
 from .document import Document
+from .view import AllDocsView
 
 
 class Database(RemoteDatabase):
-    def __init__(self, couchdb, name):
-        super().__init__(couchdb._server, name)
-        self._couchdb = couchdb
-        self._document_cache = {}
+    def __init__(self, couchdb, id):
+        super().__init__(couchdb._server, id)
 
     async def akeys(self, keys=None):
         data = await self._all_docs(keys)
@@ -44,36 +43,55 @@ class Database(RemoteDatabase):
         for row in data["rows"]:
             yield row["id"]
 
-    async def get(self, name):
-        doc = self[name]
+    async def create(self, id, exists_ok=False):
+        doc = Document(self, id)
 
         if await doc._exists():
-            await doc.fetch(discard_changes=True)
+            if exists_ok:
+                await doc.fetch(discard_changes=True)
+            else:
+                raise KeyError(
+                    f"The document '{id}' does already exists in the database '{self.id}'"
+                )
 
         return doc
 
     async def delete(self):
         await self._delete()
 
-    async def get_all(self, names):
-        request = []
-
-        if isinstance(names, str):
-            names = [names]
-
-        for name in names:
-            self[name]
-            request.append({"id": name})
-
-        docs = await self._bulk_get(request)
-
-        for data in docs["results"]:
-            doc = self[data["id"]]
-
-            if "ok" in data["docs"][0]:
-                doc._update_cache(data["docs"][0]["ok"])
-
+    async def docs(self, ids, create=False, **params):
+        view = AllDocsView(self)
+        async for doc in view.post(ids, create=create, **params):
             yield doc
+
+    async def values(self, **params):
+        view = AllDocsView(self)
+        async for doc in view.get(**params):
+            yield doc
+
+    # TODO implement this for request with rev [{"id": id, "rev": rev},...]
+    # async def bulk_docs(self, ids, create=False):
+    #     request = []
+    #
+    #     for id in ids:
+    #         request.append({"id": id})
+    #
+    #     docs = await self._bulk_get(request)
+    #
+    #     for data in docs["results"]:
+    #         doc = Document(self, data["id"])
+    #
+    #         assert len(data["docs"]) == 1
+    #
+    #         if "ok" in data["docs"][0]:
+    #             doc._update_cache(data["docs"][0]["ok"])
+    #             yield doc
+    #         elif create:
+    #             yield doc
+    #         else:
+    #             raise KeyError(
+    #                 f"The document '{doc.id}' could not be retrieved: {data['docs'][0]['error']['reason']}"
+    #             )
 
     async def find(self, selector, limit=250, **params):
         if "fields" in selector.keys():
@@ -83,8 +101,7 @@ class Database(RemoteDatabase):
             result_chunk = await self._find(selector, limit=limit, **params)
 
             for res in result_chunk["docs"]:
-                id = res["_id"]
-                doc = self[id]
+                doc = Document(self, res["_id"])
                 doc._update_cache(res)
                 yield doc
 
@@ -93,25 +110,33 @@ class Database(RemoteDatabase):
 
             params["bookmark"] = result_chunk["bookmark"]
 
-    async def save_all(self, docs=None):
-        if docs is None:
-            docs = [
-                doc._cached_data
-                for doc in self._document_cache.values()
-                if doc._dirty_cache
-            ]
-        else:
-            docs = [doc._cached_data for doc in docs]
+    def update_docs(self, ids, create=False):
+        return BulkOperation(self, ids, create)
 
-        for res in await self._bulk_docs(docs):
-            if "error" in res:
-                # TODO propagate the error(s) to the user D:
-                continue
-            doc = self[res["id"]]
-            doc._update_rev_after_save(res["rev"])
+    async def __getitem__(self, id):
+        doc = Document(self, id)
+        await doc.fetch(discard_changes=True)
+        return doc
 
-    def __getitem__(self, id):
-        if id not in self._document_cache:
-            self._document_cache[id] = Document(self, id)
 
-        return self._document_cache[id]
+class BulkOperation(object):
+    def __init__(self, database, ids, create):
+        self._database = database
+        self._ids = ids
+        self._create = create
+
+    async def __aenter__(self):
+        self._docs = [
+            doc async for doc in self._database.docs(self._ids, create=self._create)
+        ]
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        docs = [doc._cached_data for doc in self._docs if doc._dirty_cache]
+
+        # TODO pass error handling to the user
+        await self._database._bulk_docs(docs)
+
+    async def __aiter__(self):
+        for doc in self._docs:
+            yield doc

@@ -5,7 +5,6 @@ from .database import Database
 class CouchDB(object):
     def __init__(self, *args, **kwargs):
         self._server = RemoteServer(*args, **kwargs)
-        self._database_cache = {}
 
     async def __aenter__(self):
         await self._server._session()
@@ -17,16 +16,23 @@ class CouchDB(object):
     async def close(self):
         await self._server.close()
 
-    async def get_database(self, name, **kwargs):
-        if name not in self._database_cache:
-            self._database_cache[name] = Database(self, name)
-
-        db = self._database_cache[name]
-
+    async def create(self, id, exists_ok=False, **kwargs):
+        db = Database(self, id)
         if not await db._exists():
             await db._put(**kwargs)
+            return db
+        elif exists_ok:
+            return db
+        else:
+            raise KeyError(f"The database '{id}' does already exist.")
+
+    async def __getitem__(self, id):
+        db = Database(self, id)
+
+        if not await db._exists():
+            raise KeyError(f"The database '{id}' does not exist.")
 
         return db
 
-    async def list_databases(self, **params):
+    async def keys(self, **params):
         return await self._server._all_dbs(**params)
