@@ -137,7 +137,8 @@ class BulkOperation(object):
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        docs = [doc._cached_data for doc in self._docs if doc._dirty_cache]
+        # @VTTI: Yes, we actually need doc._data and not doc.data here
+        docs = [doc._data for doc in self._docs if doc._dirty_cache]
 
         if docs:
             # TODO pass error handling to the user

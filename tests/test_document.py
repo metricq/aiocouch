@@ -119,8 +119,8 @@ async def test_copy(filled_database):
     foo = await filled_database["foo"]
     foo_copy = await foo.copy("foo_copy")
 
-    assert foo_copy._cached_data.keys() == foo._cached_data.keys()
-    for key in foo_copy._cached_data.keys():
+    assert foo_copy.data.keys() == foo.data.keys()
+    for key in foo_copy.data.keys():
         if key == "_id":
             continue
         assert foo_copy[key] == foo[key]

@@ -36,16 +36,16 @@ from .remote import RemoteDocument
 class Document(RemoteDocument):
     def __init__(self, database, id):
         super().__init__(database, id)
-        self._cached_data = {"_id": id}
-        self._hashed_data = None
+        self._data = {"_id": id}
+        self._data_hash = None
 
     def _update_hash(self):
-        self._hashed_data = hash(json.dumps(self._cached_data, sort_keys=True))
+        self._data_hash = hash(json.dumps(self._data, sort_keys=True))
 
     @property
     def _dirty_cache(self):
-        return self._hashed_data is None or self._hashed_data != hash(
-            json.dumps(self._cached_data, sort_keys=True)
+        return self._data_hash is None or self._data_hash != hash(
+            json.dumps(self._data, sort_keys=True)
         )
 
     async def fetch(self, discard_changes=False):
@@ -57,7 +57,7 @@ class Document(RemoteDocument):
 
     async def save(self):
         if self._dirty_cache:
-            data = await self._put(self._cached_data)
+            data = await self._put(self._data)
             self._update_rev_after_save(data["rev"])
 
     async def delete(self, discard_changes=False):
@@ -72,45 +72,53 @@ class Document(RemoteDocument):
 
         return await self._database[new_id]
 
+    @property
+    def data(self):
+        return self._data if self.exists else None
+
+    @property
+    def exists(self):
+        return "_rev" in self and "_deleted" not in self
+
     def _update_rev_after_save(self, rev):
-        self._cached_data["_rev"] = rev
+        self._data["_rev"] = rev
         self._update_hash()
 
     def _update_cache(self, new_cache):
-        self._cached_data = new_cache
+        self._data = new_cache
         self._update_hash()
 
     def __getitem__(self, key):
-        return self._cached_data[key]
+        return self._data[key]
 
     def __setitem__(self, key, value):
-        self._cached_data[key] = value
+        self._data[key] = value
 
     def __delitem__(self, key):
-        del self._cached_data[key]
+        del self._data[key]
 
     def __contains__(self, key):
-        return key in self._cached_data
+        return key in self._data
 
     def update(self, data):
-        self._cached_data.update(data)
+        self._data.update(data)
 
     def items(self):
-        return self._cached_data.items()
+        return self._data.items()
 
     def keys(self):
-        return self._cached_data.keys()
+        return self._data.keys()
 
     def values(self):
-        return self._cached_data.values()
+        return self._data.values()
 
     def get(self, key, default=None):
-        return self._cached_data.get(key, default)
+        return self._data.get(key, default)
 
     def setdefault(self, key, default=None):
-        return self._cached_data.setdefault(key, default)
+        return self._data.setdefault(key, default)
 
     # TODO, do we need a del checking for dirty caches?
 
     def __repr__(self):
-        return json.dumps(self._cached_data, indent=2)
+        return json.dumps(self._data, indent=2)
