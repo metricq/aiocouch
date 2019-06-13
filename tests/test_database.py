@@ -49,6 +49,10 @@ async def test_update_docs(database):
     assert len(keys) == 2
     assert sorted(keys) == ["baz", "foo"]
 
+    async for doc in database.values():
+        assert "llama" in doc
+        assert doc["llama"] == "awesome"
+
 
 async def test_docs_on_empty(database):
     all_docs = [doc async for doc in database.docs([])]
@@ -116,6 +120,13 @@ async def test_find_chunked(filled_database):
 
 async def test_values_for_filled(filled_database):
     keys = [doc.id async for doc in filled_database.values()]
+
+    assert len(keys) == 4
+    assert sorted(keys) == ["baz", "baz2", "foo", "foo2"]
+
+
+async def test_docs_with_no_ids(filled_database):
+    keys = [doc.id async for doc in filled_database.docs()]
 
     assert len(keys) == 4
     assert sorted(keys) == ["baz", "baz2", "foo", "foo2"]

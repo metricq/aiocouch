@@ -59,9 +59,14 @@ class Database(RemoteDatabase):
     async def delete(self):
         await self._delete()
 
-    async def docs(self, ids, create=False, **params):
+    async def docs(self, ids=None, create=False, **params):
         view = AllDocsView(self)
-        async for doc in view.post(ids, create=create, **params):
+        if ids is None:
+            iter = view.get(**params)
+        else:
+            iter = view.post(ids, create=create, **params)
+
+        async for doc in iter:
             yield doc
 
     async def values(self, **params):
