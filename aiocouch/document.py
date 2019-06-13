@@ -37,7 +37,16 @@ class Document(RemoteDocument):
     def __init__(self, database, id):
         super().__init__(database, id)
         self._cached_data = {"_id": id}
-        self._dirty_cache = True
+        self._hashed_data = None
+
+    def _update_hash(self):
+        self._hashed_data = hash(json.dumps(self._cached_data, sort_keys=True))
+
+    @property
+    def _dirty_cache(self):
+        return self._hashed_data is None or self._hashed_data != hash(
+            json.dumps(self._cached_data, sort_keys=True)
+        )
 
     async def fetch(self, discard_changes=False):
         if self._dirty_cache and not discard_changes:
@@ -65,21 +74,19 @@ class Document(RemoteDocument):
 
     def _update_rev_after_save(self, rev):
         self._cached_data["_rev"] = rev
-        self._dirty_cache = False
+        self._update_hash()
 
     def _update_cache(self, new_cache):
         self._cached_data = new_cache
-        self._dirty_cache = False
+        self._update_hash()
 
     def __getitem__(self, key):
         return self._cached_data[key]
 
     def __setitem__(self, key, value):
-        self._dirty_cache = True
         self._cached_data[key] = value
 
     def __delitem__(self, key):
-        self._dirty_cache = True
         del self._cached_data[key]
 
     def __contains__(self, key):

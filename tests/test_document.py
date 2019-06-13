@@ -175,3 +175,27 @@ async def test_get(doc):
 
 async def test_repr(doc):
     print(doc)
+
+
+async def test_cache(doc):
+    assert doc._dirty_cache is True
+
+    await doc.save()
+
+    assert doc._dirty_cache is False
+
+    doc["foo"] = {"hello": "kitty"}
+
+    assert doc._dirty_cache is True
+
+    await doc.save()
+
+    assert doc._dirty_cache is False
+
+    doc["foo"]["llama"] = "juicy"
+
+    assert doc._dirty_cache is True
+
+    await doc.save()
+
+    assert doc._dirty_cache is False
