@@ -97,6 +97,12 @@ class Document(RemoteDocument):
     def values(self):
         return self._cached_data.values()
 
+    def get(self, key, default=None):
+        return self._cached_data.get(key, default)
+
+    def setdefault(self, key, default=None):
+        return self._cached_data.setdefault(key, default)
+
     # TODO, do we need a del checking for dirty caches?
 
     def __repr__(self):

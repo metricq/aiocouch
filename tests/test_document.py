@@ -154,5 +154,24 @@ async def test_filled_doc_items_keys_values(doc):
     assert dict(doc.items()) == {"_id": "foo", "test": "value"}
 
 
+async def test_get(doc):
+    assert doc.get("foo") is None
+    with pytest.raises(KeyError):
+        doc["foo"]
+
+    assert doc.get("foo", "baz") == "baz"
+    with pytest.raises(KeyError):
+        doc["foo"]
+
+    assert doc.setdefault("foo") is None
+    assert doc["foo"] is None
+
+    assert doc.setdefault("baz", "bar") == "bar"
+    assert doc["baz"] == "bar"
+
+    assert doc.setdefault("baz", "kitty") == "bar"
+    assert doc["baz"] == "bar"
+
+
 async def test_repr(doc):
     print(doc)
