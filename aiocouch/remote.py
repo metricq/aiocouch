@@ -52,11 +52,10 @@ def _stringify_params(params):
 class RemoteServer(object):
     def __init__(self, server, user=None, password=None, **kwargs):
         self._server = server
-        self._http_session = aiohttp.ClientSession(**kwargs)
+        self._http_session = aiohttp.ClientSession(
+            auth=aiohttp.BasicAuth(user, password), **kwargs
+        )
         self._databases = {}
-        self._user = user
-        self._password = password
-        self._connected = False
 
     async def __aenter__(self):
         return self
@@ -64,22 +63,13 @@ class RemoteServer(object):
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.close()
 
-    async def _session(self, user=None, password=None):
-        await self._post(
-            "/_session",
-            data={
-                "name": user if user else self._user,
-                "password": password if password else self._password,
-            },
-        )
-        self._connected = True
-
     @staticmethod
     async def _check_return_code(method, resp):
+        # print("------- New Request -------")
+        # print(f"{resp.request_info}:")
         # print(f"Received from {resp.method} {resp.url}: {resp}")
-        # print(f"{resp.request_info}")
-        if resp.status in range(200, 300):
 
+        if resp.status in range(200, 300):
             return
 
         if resp.status == 302:

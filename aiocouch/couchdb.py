@@ -7,7 +7,6 @@ class CouchDB(object):
         self._server = RemoteServer(*args, **kwargs)
 
     async def __aenter__(self):
-        await self._server._session()
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
