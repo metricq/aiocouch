@@ -46,7 +46,7 @@ class AllDocsView(RemoteAllDocsView):
         for res in result_chunk["rows"]:
             doc = Document(self._database, res["key"])
 
-            if "error" not in res:
+            if "error" not in res and "deleted" not in res["value"]:
                 doc._update_cache(res["doc"])
                 yield doc
             elif create:

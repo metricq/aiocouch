@@ -54,6 +54,22 @@ async def test_update_docs(database):
         assert doc["llama"] == "awesome"
 
 
+async def test_update_docs_for_deleted(filled_database):
+    doc = await filled_database["foo"]
+    await doc.delete()
+
+    async with filled_database.update_docs(["foo"], create=True) as docs:
+        async for doc in docs:
+            doc["llama"] = "awesome"
+
+    doc = await filled_database["foo"]
+
+    assert "_deleted" not in doc
+    assert "_rev" in doc
+    assert doc["_rev"].startswith("3-")
+    assert doc["llama"] == "awesome"
+
+
 async def test_docs_on_empty(database):
     all_docs = [doc async for doc in database.docs([])]
 
