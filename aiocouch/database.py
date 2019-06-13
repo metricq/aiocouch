@@ -129,6 +129,7 @@ class BulkOperation(object):
         self._database = database
         self._ids = ids
         self._create = create
+        self.status = None
 
     async def __aenter__(self):
         self._docs = [
@@ -141,8 +142,7 @@ class BulkOperation(object):
         docs = [doc._data for doc in self._docs if doc._dirty_cache]
 
         if docs:
-            # TODO pass error handling to the user
-            await self._database._bulk_docs(docs)
+            self.status = await self._database._bulk_docs(docs)
 
     async def __aiter__(self):
         for doc in self._docs:
