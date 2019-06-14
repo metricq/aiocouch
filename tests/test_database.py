@@ -93,6 +93,19 @@ async def test_docs_on_non_existant(database):
     assert doc.id == "foo"
 
 
+async def test_docs_on_deleted(filled_database):
+    doc = await filled_database["foo"]
+    await doc.delete()
+
+    with pytest.raises(KeyError):
+        async for doc in filled_database.docs(["foo"]):
+            assert False
+
+    async for doc in filled_database.docs(["foo"], create=True):
+        assert doc.id == "foo"
+        assert doc.exists is False
+
+
 async def test_find(filled_database):
     matching_docs = [
         doc async for doc in filled_database.find({"bar": True, "fields": "ignored"})
