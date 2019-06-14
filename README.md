@@ -9,7 +9,7 @@ Run `pip install .` within the root directory.
 
 - Setup the CouchDB URL and credentials using the environment variables
 - (Optional) install using `pip install --editable '.[tests]'`
-- run pytest --cov=aiocouch
+- run `pytest --cov=aiocouch`
 
 
 Or shorter for CI:
