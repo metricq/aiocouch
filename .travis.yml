@@ -16,6 +16,9 @@ addons:
     packages:
     - couchdb
 
+before_script:
+  - curl -X GET localhost:5984
+
 install:
   - pip install '.[tests]'
 
