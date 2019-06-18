@@ -10,16 +10,17 @@ dist: xenial
 before_script:
   - echo "deb https://apache.bintray.com/couchdb-deb xenial main" | sudo tee -a /etc/apt/sources.list
   - curl -L https://couchdb.apache.org/repo/bintray-pubkey.asc | sudo apt-key add -
-  - sudo apt-get update && sudo apt-get install couchdb
+  - sudo apt-get update && sudo apt-get -y install couchdb
+  - sudo systemctl start couchdb
   - sleep 10
-  - curl -X PUT http://admin:admin@127.0.0.1:5984/_users
-  - curl -X PUT http://admin:admin@127.0.0.1:5984/_replicator
+  - curl -X PUT http://admin:@127.0.0.1:5984/_users
+  - curl -X PUT http://admin:@127.0.0.1:5984/_replicator
   - curl -X GET localhost:5984
 
 install:
   - pip install '.[tests]'
 
 script:
-  - export COUCHDB_USER admin
-  - export COUCHDB_PASS admin
+  - export COUCHDB_USER=admin
+  - export COUCHDB_PASS=""
   - pytest --cov=aiocouch
