@@ -83,8 +83,12 @@ class RemoteServer(object):
             )
         elif resp.status in range(400, 500):
             json = await resp.json()
+            if json and "reason" in json:
+                reason = f": '{json['reason']}'"
+            else:
+                reason = ""
             raise RuntimeError(
-                f"The request ({method} {url}) returned an error '{resp.reason}' ({resp.status}): '{json['reason']}'"
+                f"The request ({method} {url}) returned an error '{resp.reason}' ({resp.status}){reason}"
             )
         elif resp.status == 500:
             raise RuntimeError(
