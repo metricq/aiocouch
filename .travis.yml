@@ -13,7 +13,7 @@ before_script:
   - sudo apt-get update && sudo apt-get -y install couchdb
   - echo "admin = admin" | sudo tee -a /etc/couchdb/local.ini
   - sudo tail -n 10 /etc/couchdb/local.ini
-  - sudo ls -r /etc/couchdb
+  - sudo ls /etc/couchdb/local.d/
   - sudo systemctl start couchdb
   - sleep 10
   - curl -X PUT http://admin:admin@127.0.0.1:5984/_users
