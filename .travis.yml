@@ -13,8 +13,8 @@ before_script:
   - sudo apt-get update && sudo apt-get -y install couchdb
   - sudo systemctl start couchdb
   - sleep 10
-  - curl -X PUT http://admin:@127.0.0.1:5984/_users
-  - curl -X PUT http://admin:@127.0.0.1:5984/_replicator
+  - curl -X PUT http://admin:admin@127.0.0.1:5984/_users
+  - curl -X PUT http://admin:admin@127.0.0.1:5984/_replicator
   - curl -X GET localhost:5984
 
 install:
@@ -22,5 +22,5 @@ install:
 
 script:
   - export COUCHDB_USER=admin
-  - export COUCHDB_PASS=""
+  - export COUCHDB_PASS=admin
   - pytest --cov=aiocouch
