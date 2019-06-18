@@ -12,7 +12,7 @@ before_script:
   - curl -L https://couchdb.apache.org/repo/bintray-pubkey.asc | sudo apt-key add -
   - sudo apt-get update && sudo apt-get -y install couchdb
   - echo "admin = admin" | sudo tee -a /etc/couchdb/local.ini
-  - tail -n 10 /etc/couchdb/local.ini
+  - sudo tail -n 10 /etc/couchdb/local.ini
   - sudo systemctl start couchdb
   - sleep 10
   - curl -X PUT http://admin@127.0.0.1:5984/_users
