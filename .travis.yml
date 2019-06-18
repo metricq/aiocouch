@@ -1,0 +1,18 @@
+language: python
+python:
+  - "3.5"
+  - "3.6"
+  - "3.7"
+
+
+dist: xenial
+
+service: couchdb
+
+install:
+  - pip install '.[tests]'
+
+script:
+  - export COUCHDB_USER
+  - export COUCHDB_PASS
+  - pytest --cov=aiocouch
