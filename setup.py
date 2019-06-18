@@ -1,6 +1,6 @@
 from setuptools import setup
 
-test_deps = ["pytest", "pytest-asyncio", "pytest-cov"]
+test_deps = ["pytest", "pytest-asyncio", "pytest-cov", "packaging"]
 
 setup(
     name="aiocouch",
