@@ -9,6 +9,13 @@ dist: xenial
 
 service: couchdb
 
+addons:
+  apt:
+    sources:
+      - ppa:couchdb/stable
+    packages:
+    - couchdb
+
 install:
   - pip install '.[tests]'
 
