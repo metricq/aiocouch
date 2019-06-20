@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/metricq/aiocouch.svg?branch=master)](https://travis-ci.com/metricq/aiocouch)
+
 # aiocouch
 An asynchronous client library for CouchDB 2.0 based on asyncio using aiohttp
 
