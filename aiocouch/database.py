@@ -112,19 +112,21 @@ class Database(RemoteDatabase):
     #                 f"The document '{doc.id}' could not be retrieved: {data['docs'][0]['error']['reason']}"
     #             )
 
-    async def find(self, selector, limit=250, **params):
+    async def find(self, selector, limit=None, **params):
         if "fields" in selector.keys():
             del selector["fields"]
 
+        pagination_size = limit if limit is not None else 10000
+
         while True:
-            result_chunk = await self._find(selector, limit=limit, **params)
+            result_chunk = await self._find(selector, limit=pagination_size, **params)
 
             for res in result_chunk["docs"]:
                 doc = Document(self, res["_id"])
                 doc._update_cache(res)
                 yield doc
 
-            if len(result_chunk["docs"]) < limit:
+            if len(result_chunk["docs"]) < pagination_size or limit is not None:
                 break
 
             params["bookmark"] = result_chunk["bookmark"]

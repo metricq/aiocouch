@@ -140,7 +140,7 @@ async def test_find(filled_database):
     assert "baz2" in matching_keys
 
 
-async def test_find_chunked(filled_database):
+async def test_find_limited(filled_database):
     matching_docs = [
         doc
         async for doc in filled_database.find(
@@ -148,7 +148,7 @@ async def test_find_chunked(filled_database):
         )
     ]
 
-    assert len(matching_docs) == 3
+    assert len(matching_docs) == 1
 
     from aiocouch.document import Document
 
@@ -157,8 +157,6 @@ async def test_find_chunked(filled_database):
         assert isinstance(doc, Document)
         matching_keys.append(doc.id)
 
-    assert "foo" in matching_keys
-    assert "foo2" in matching_keys
     assert "baz2" in matching_keys
 
 
@@ -169,8 +167,8 @@ async def test_values_for_filled(filled_database):
     assert sorted(keys) == ["baz", "baz2", "foo", "foo2"]
 
 
-async def test_values_for_filled_chunked(filled_database):
+async def test_values_for_filled_limited(filled_database):
     keys = [doc.id async for doc in filled_database.values(limit=1)]
 
-    assert len(keys) == 4
-    assert sorted(keys) == ["baz", "baz2", "foo", "foo2"]
+    assert len(keys) == 1
+    assert keys == ["baz"]
