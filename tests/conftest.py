@@ -56,6 +56,16 @@ async def filled_database(database):
 
 
 @pytest.fixture
+async def large_filled_database(database):
+    async with database.update_docs([f'doc{i}' for i in range(2000)], create=True) as docs:
+        async for doc in docs:
+            doc["llama"] = "awesome"
+
+    yield database
+
+
+
+@pytest.fixture
 async def doc(database):
     doc = await database.create("foo")
     yield doc

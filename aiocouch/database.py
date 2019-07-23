@@ -28,8 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .remote import RemoteDatabase
 from .document import Document
+from .remote import RemoteDatabase
 from .view import AllDocsView
 
 
@@ -79,7 +79,6 @@ class Database(RemoteDatabase):
 
             iter = view.get(**params)
 
-
         async for doc in iter:
             yield doc
 
@@ -116,6 +115,8 @@ class Database(RemoteDatabase):
         if "fields" in selector.keys():
             del selector["fields"]
 
+        # We must use pagination because otherwise the default limit of the _find endpoint
+        # fucks us
         pagination_size = limit if limit is not None else 10000
 
         while True:

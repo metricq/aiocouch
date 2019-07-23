@@ -15,11 +15,13 @@ async def test_create_document(database):
     # doc was saved, so it should be listed in the database
     assert doc.id in [key async for key in database.akeys()]
 
+
 async def test_akeys_with_prefix(filled_database):
     keys = [key async for key in filled_database.akeys(prefix="ba")]
 
-    assert(len(keys) == 2)
+    assert len(keys) == 2
     assert (sorted(keys)) == ["baz", "baz2"]
+
 
 async def test_saved_docs_in_filled_db(filled_database):
     keys = [key async for key in filled_database.akeys()]
@@ -97,11 +99,13 @@ async def test_docs_on_non_existant(database):
     assert doc._dirty_cache is True
     assert doc.id == "foo"
 
+
 async def test_docs_with_prefix(filled_database):
     keys = [doc.id async for doc in filled_database.docs(prefix="ba")]
 
-    assert(len(keys) == 2)
+    assert len(keys) == 2
     assert (sorted(keys)) == ["baz", "baz2"]
+
 
 async def test_docs_on_deleted(filled_database):
     doc = await filled_database["foo"]
@@ -115,11 +119,13 @@ async def test_docs_on_deleted(filled_database):
         assert doc.id == "foo"
         assert doc.exists is False
 
+
 async def test_docs_with_no_ids(filled_database):
     keys = [doc.id async for doc in filled_database.docs()]
 
     assert len(keys) == 4
     assert sorted(keys) == ["baz", "baz2", "foo", "foo2"]
+
 
 async def test_find(filled_database):
     matching_docs = [
@@ -172,3 +178,16 @@ async def test_values_for_filled_limited(filled_database):
 
     assert len(keys) == 1
     assert keys == ["baz"]
+
+
+async def test_many_docs(large_filled_database):
+    keys = [key async for key in large_filled_database.akeys()]
+    assert len(keys) == 2000
+
+    docs = [doc async for doc in large_filled_database.docs()]
+    assert len(docs) == 2000
+
+    find_docs = [
+        doc async for doc in large_filled_database.find(selector={"llama": "awesome"})
+    ]
+    assert len(find_docs) == 2000
