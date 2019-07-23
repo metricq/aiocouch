@@ -10,8 +10,14 @@ class AllDocsView(RemoteAllDocsView):
         if limit:
             params["limit"] = limit + 1
 
-        startkey = None
-        startkey_docid = None
+        try:
+            startkey = params.pop('startkey')
+        except KeyError:
+            startkey = None
+        try:
+            startkey_docid = params.pop('startkey_docid')
+        except KeyError:
+            startkey_docid = None
 
         while True:
             result_chunk = await self._get(

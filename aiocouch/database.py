@@ -37,8 +37,13 @@ class Database(RemoteDatabase):
     def __init__(self, couchdb, id):
         super().__init__(couchdb._server, id)
 
-    async def akeys(self, keys=None):
-        data = await self._all_docs(keys)
+    async def akeys(self, keys=None, prefix=None, **params):
+        if prefix is not None:
+            assert keys is None
+            params["startkey"] = f'"{prefix}"'
+            params["endkey"] = f'"{prefix}💩"'
+
+        data = await self._all_docs(keys, **params)
 
         for row in data["rows"]:
             yield row["id"]
@@ -59,12 +64,21 @@ class Database(RemoteDatabase):
     async def delete(self):
         await self._delete()
 
-    async def docs(self, ids=None, create=False, **params):
+    async def docs(self, ids=None, create=False, prefix=None, **params):
         view = AllDocsView(self)
-        if ids is None:
-            iter = view.get(**params)
+        if prefix is None:
+            if ids is None:
+                iter = view.get(**params)
+            else:
+                iter = view.post(ids, create=create, **params)
         else:
-            iter = view.post(ids, create=create, **params)
+            assert ids is None
+            assert create is False
+            params["startkey"] = f'"{prefix}"'
+            params["endkey"] = f'"{prefix}💩"'
+
+            iter = view.get(**params)
+
 
         async for doc in iter:
             yield doc

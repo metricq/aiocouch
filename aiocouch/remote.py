@@ -159,9 +159,9 @@ class RemoteDatabase(object):
     async def _delete(self):
         await self._remote._delete(self.end_point)
 
-    async def _all_docs(self, keys=None):
+    async def _all_docs(self, keys=None, **params):
         return await self._remote._post(
-            f"{self.end_point}/_all_docs", {"keys": keys} if keys is not None else {}
+            f"{self.end_point}/_all_docs", {"keys": keys} if keys is not None else {}, params
         )
 
     async def _bulk_get(self, docs, **params):
