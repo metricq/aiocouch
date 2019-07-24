@@ -28,8 +28,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import aiohttp
 import asyncio
+from urllib.parse import quote
+
+import aiohttp
+
+
+def _quote_id(id):
+    return quote(id, safe=[])
 
 
 def _stringify_params(params):
@@ -143,37 +149,37 @@ class RemoteDatabase(object):
         self._remote = remote
 
     @property
-    def end_point(self):
-        return f"/{self.id}"
+    def endpoint(self):
+        return f"/{_quote_id(self.id)}"
 
     async def _exists(self):
         try:
-            await self._remote._head(self.end_point)
+            await self._remote._head(self.endpoint)
             return True
         except KeyError:
             return False
 
     async def _get(self):
-        return self._remote._get(self.end_point)
+        return self._remote._get(self.endpoint)
 
     async def _put(self, **params):
-        return await self._remote._put(self.end_point)
+        return await self._remote._put(self.endpoint)
 
     async def _delete(self):
-        await self._remote._delete(self.end_point)
+        await self._remote._delete(self.endpoint)
 
     async def _bulk_get(self, docs, **params):
         return await self._remote._post(
-            f"{self.end_point}/_bulk_get", {"docs": docs}, params
+            f"{self.endpoint}/_bulk_get", {"docs": docs}, params
         )
 
     async def _bulk_docs(self, docs, **data):
         data["docs"] = docs
-        return await self._remote._post(f"{self.end_point}/_bulk_docs", data)
+        return await self._remote._post(f"{self.endpoint}/_bulk_docs", data)
 
     async def _find(self, selector, **data):
         data["selector"] = selector
-        return await self._remote._post(f"{self.end_point}/_find", data)
+        return await self._remote._post(f"{self.endpoint}/_find", data)
 
 
 class RemoteDocument(object):
@@ -183,7 +189,7 @@ class RemoteDocument(object):
 
     @property
     def endpoint(self):
-        return f"/{self._database.id}/{self.id}"
+        return f"{self._database.endpoint}/{_quote_id(self.id)}"
 
     async def _exists(self):
         try:
@@ -219,7 +225,7 @@ class RemoteView(object):
 
     @property
     def endpoint(self):
-        return f"/{self._database.id}/_design/{self.ddoc}/_view/{self.id}"
+        return f"{self._database.endpoint}/_design/{_quote_id(self.ddoc)}/_view/{_quote_id(self.id)}"
 
     async def _get(self, **params):
         return await self._database._remote._get(self.endpoint, params)

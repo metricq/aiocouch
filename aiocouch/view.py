@@ -1,5 +1,5 @@
-from .remote import RemoteView
 from .document import Document
+from .remote import RemoteView
 
 
 class View(RemoteView):
