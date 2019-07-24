@@ -30,23 +30,16 @@
 
 from .document import Document
 from .remote import RemoteDatabase
-from .view import AllDocsView
+from .view import AllDocsView, View
 
 
 class Database(RemoteDatabase):
     def __init__(self, couchdb, id):
         super().__init__(couchdb._server, id)
 
-    async def akeys(self, keys=None, prefix=None, **params):
-        if prefix is not None:
-            assert keys is None
-            params["startkey"] = f'"{prefix}"'
-            params["endkey"] = f'"{prefix}💩"'
-
-        data = await self._all_docs(keys, **params)
-
-        for row in data["rows"]:
-            yield row["id"]
+    async def akeys(self, **params):
+        async for key in AllDocsView(self).akeys(**params):
+            yield key
 
     async def create(self, id, exists_ok=False):
         doc = Document(self, id)
@@ -64,56 +57,24 @@ class Database(RemoteDatabase):
     async def delete(self):
         await self._delete()
 
-    async def docs(self, ids=None, create=False, prefix=None, **params):
-        view = AllDocsView(self)
-        if prefix is None:
-            if ids is None:
-                iter = view.get(**params)
-            else:
-                iter = view.post(ids, create=create, **params)
-        else:
-            assert ids is None
-            assert create is False
-            params["startkey"] = f'"{prefix}"'
-            params["endkey"] = f'"{prefix}💩"'
-
-            iter = view.get(**params)
-
-        async for doc in iter:
+    async def docs(self, **params):
+        async for doc in self.all_docs().docs(**params):
             yield doc
 
     async def values(self, **params):
-        view = AllDocsView(self)
-        async for doc in view.get(**params):
+        async for doc in self.all_docs().docs(**params):
             yield doc
 
-    # TODO implement this for request with rev [{"id": id, "rev": rev},...]
-    # async def bulk_docs(self, ids, create=False):
-    #     request = []
-    #
-    #     for id in ids:
-    #         request.append({"id": id})
-    #
-    #     docs = await self._bulk_get(request)
-    #
-    #     for data in docs["results"]:
-    #         doc = Document(self, data["id"])
-    #
-    #         assert len(data["docs"]) == 1
-    #
-    #         if "ok" in data["docs"][0]:
-    #             doc._update_cache(data["docs"][0]["ok"])
-    #             yield doc
-    #         elif create:
-    #             yield doc
-    #         else:
-    #             raise KeyError(
-    #                 f"The document '{doc.id}' could not be retrieved: {data['docs'][0]['error']['reason']}"
-    #             )
+    def all_docs(self):
+        return AllDocsView(self)
+
+    def view(self, design_doc, view):
+        return View(self, design_doc, view)
 
     async def find(self, selector, limit=None, **params):
+        # we need to get the complete doc, so fields selector isn't allowed
         if "fields" in selector.keys():
-            del selector["fields"]
+            raise ValueError("selector must not cointain a fields entry")
 
         # We must use pagination because otherwise the default limit of the _find endpoint
         # fucks us

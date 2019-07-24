@@ -70,6 +70,9 @@ class RemoteServer(object):
         # print(f"Received from {resp.method} {resp.url}: {resp}")
 
         if resp.status in range(200, 300):
+            # import json
+            # print(f"{json.dumps(await resp.json(), indent=2)}")
+
             return
 
         if resp.status == 302:
@@ -159,11 +162,6 @@ class RemoteDatabase(object):
     async def _delete(self):
         await self._remote._delete(self.end_point)
 
-    async def _all_docs(self, keys=None, **params):
-        return await self._remote._post(
-            f"{self.end_point}/_all_docs", {"keys": keys} if keys is not None else {}, params
-        )
-
     async def _bulk_get(self, docs, **params):
         return await self._remote._post(
             f"{self.end_point}/_bulk_get", {"docs": docs}, params
@@ -228,12 +226,3 @@ class RemoteView(object):
 
     async def _post(self, keys, **params):
         return await self._database._remote._post(self.endpoint, {"keys": keys}, params)
-
-
-class RemoteAllDocsView(RemoteView):
-    def __init__(self, database):
-        super().__init__(database, None, "_all_docs")
-
-    @property
-    def endpoint(self):
-        return f"/{self._database.id}/_all_docs"

@@ -23,6 +23,15 @@ async def test_akeys_with_prefix(filled_database):
     assert (sorted(keys)) == ["baz", "baz2"]
 
 
+async def test_akeys_with_keys(filled_database):
+    keys = [
+        key async for key in filled_database.akeys(keys=["foo", "baz", "halloween"])
+    ]
+
+    assert len(keys) == 2
+    assert keys == ["foo", "baz"]
+
+
 async def test_saved_docs_in_filled_db(filled_database):
     keys = [key async for key in filled_database.akeys()]
 
@@ -128,9 +137,7 @@ async def test_docs_with_no_ids(filled_database):
 
 
 async def test_find(filled_database):
-    matching_docs = [
-        doc async for doc in filled_database.find({"bar": True, "fields": "ignored"})
-    ]
+    matching_docs = [doc async for doc in filled_database.find({"bar": True})]
 
     assert len(matching_docs) == 3
 
@@ -147,12 +154,7 @@ async def test_find(filled_database):
 
 
 async def test_find_limited(filled_database):
-    matching_docs = [
-        doc
-        async for doc in filled_database.find(
-            {"bar": True, "fields": "ignored"}, limit=1
-        )
-    ]
+    matching_docs = [doc async for doc in filled_database.find({"bar": True}, limit=1)]
 
     assert len(matching_docs) == 1
 
@@ -164,6 +166,25 @@ async def test_find_limited(filled_database):
         matching_keys.append(doc.id)
 
     assert "baz2" in matching_keys
+
+
+async def test_find_invalid_selector(database):
+    with pytest.raises(ValueError):
+        matching_docs = [
+            doc
+            async for doc in database.find({"bar": True, "fields": "anything"}, limit=1)
+        ]
+
+
+async def test_alldocs_values(filled_database):
+    values = [key async for key, value in filled_database.all_docs().values()]
+
+    assert len(values) == 4
+
+    assert values[0] == "baz"
+    assert values[1] == "baz2"
+    assert values[2] == "foo"
+    assert values[3] == "foo2"
 
 
 async def test_values_for_filled(filled_database):
