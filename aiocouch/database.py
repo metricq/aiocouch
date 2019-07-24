@@ -57,8 +57,8 @@ class Database(RemoteDatabase):
     async def delete(self):
         await self._delete()
 
-    async def docs(self, **params):
-        async for doc in self.all_docs().docs(**params):
+    async def docs(self, ids=None, create=False, prefix=None, **params):
+        async for doc in self.all_docs().docs(ids, create, prefix, **params):
             yield doc
 
     async def values(self, **params):
