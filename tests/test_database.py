@@ -177,7 +177,7 @@ async def test_find_invalid_selector(database):
 
 
 async def test_alldocs_values(filled_database):
-    values = [key async for key, value in filled_database.all_docs().values()]
+    values = [key async for key, value in filled_database.all_docs().aitems()]
 
     assert len(values) == 4
 

@@ -36,7 +36,7 @@ class View(RemoteView):
                 if "error" not in res:
                     yield res["id"]
 
-    async def values(self, **params):
+    async def aitems(self, **params):
         async for res in self.get(**params):
             yield res["key"], res["value"]
 
