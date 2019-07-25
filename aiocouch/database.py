@@ -121,6 +121,8 @@ class BulkOperation(object):
 
         if docs:
             self.status = await self._database._bulk_docs(docs)
+        else:
+            self.status = []
 
     async def __aiter__(self):
         for doc in self._docs:
