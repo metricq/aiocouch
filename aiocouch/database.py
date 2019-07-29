@@ -39,7 +39,7 @@ class Database(RemoteDatabase):
         super().__init__(couchdb._server, id)
 
     async def akeys(self, **params):
-        async for key in AllDocsView(self).akeys(**params):
+        async for key in self.all_docs.ids(**params):
             yield key
 
     async def create(self, id, exists_ok=False):
@@ -59,13 +59,14 @@ class Database(RemoteDatabase):
         await self._delete()
 
     async def docs(self, ids=None, create=False, prefix=None, **params):
-        async for doc in self.all_docs().docs(ids, create, prefix, **params):
+        async for doc in self.all_docs.docs(ids, create, prefix, **params):
             yield doc
 
     async def values(self, **params):
-        async for doc in self.all_docs().docs(**params):
+        async for doc in self.all_docs.docs(**params):
             yield doc
 
+    @property
     def all_docs(self):
         return AllDocsView(self)
 

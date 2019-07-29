@@ -22,7 +22,7 @@ class View(RemoteView):
         for res in result_chunk["rows"]:
             yield res
 
-    async def akeys(self, keys=None, prefix=None, **params):
+    async def ids(self, keys=None, prefix=None, **params):
         if prefix is not None:
             params["startkey"] = f'"{prefix}"'
             params["endkey"] = f'"{prefix}{self.prefix_sentinal}"'
@@ -36,9 +36,17 @@ class View(RemoteView):
                 if "error" not in res:
                     yield res["id"]
 
+    async def akeys(self, **params):
+        async for res in self.get(**params):
+            yield res["key"]
+
     async def aitems(self, **params):
         async for res in self.get(**params):
             yield res["key"], res["value"]
+
+    async def avalues(self, **params):
+        async for res in self.get(**params):
+            yield res["value"]
 
     @staticmethod
     def _is_deleted(res):
