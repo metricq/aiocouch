@@ -28,6 +28,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from .bulk import BulkOperation
 from .document import Document
 from .remote import RemoteDatabase
 from .view import AllDocsView, View
@@ -100,30 +101,3 @@ class Database(RemoteDatabase):
         doc = Document(self, id)
         await doc.fetch(discard_changes=True)
         return doc
-
-
-class BulkOperation(object):
-    def __init__(self, database, ids, create):
-        self._database = database
-        self._ids = ids
-        self._create = create
-        self.status = None
-
-    async def __aenter__(self):
-        self._docs = [
-            doc async for doc in self._database.docs(self._ids, create=self._create)
-        ]
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        # @VTTI: Yes, we actually need doc._data and not doc.data here
-        docs = [doc._data for doc in self._docs if doc._dirty_cache]
-
-        if docs:
-            self.status = await self._database._bulk_docs(docs)
-        else:
-            self.status = []
-
-    async def __aiter__(self):
-        for doc in self._docs:
-            yield doc
