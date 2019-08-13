@@ -48,13 +48,6 @@ class View(RemoteView):
         async for res in self.get(**params):
             yield res["value"]
 
-    @staticmethod
-    def _is_deleted(res):
-        try:
-            return "deleted" in res["value"]
-        except KeyError:
-            return False
-
     async def docs(self, ids=None, create=False, prefix=None, **params):
         params["include_docs"] = True
         if prefix is None:
@@ -74,7 +67,7 @@ class View(RemoteView):
             iter = self.get(**params)
 
         async for res in iter:
-            if "error" not in res and not self._is_deleted(res):
+            if "error" not in res and res["doc"] is not None:
                 doc = Document(self._database, res["id"])
                 doc._update_cache(res["doc"])
                 yield doc
