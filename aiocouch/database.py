@@ -76,7 +76,7 @@ class Database(RemoteDatabase):
     async def find(self, selector, limit=None, **params):
         # we need to get the complete doc, so fields selector isn't allowed
         if "fields" in selector.keys():
-            raise ValueError("selector must not cointain a fields entry")
+            raise ValueError("selector must not contain a fields entry")
 
         # We must use pagination because otherwise the default limit of the _find endpoint
         # fucks us
