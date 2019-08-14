@@ -30,6 +30,7 @@
 
 from .bulk import BulkOperation
 from .document import Document
+from .design_document import DesignDocument
 from .remote import RemoteDatabase
 from .view import AllDocsView, View
 
@@ -50,7 +51,7 @@ class Database(RemoteDatabase):
                 await doc.fetch(discard_changes=True)
             else:
                 raise KeyError(
-                    f"The document '{id}' does already exists in the database '{self.id}'"
+                    f"The document '{id}' does already exist in the database '{self.id}'"
                 )
 
         return doc
@@ -72,6 +73,19 @@ class Database(RemoteDatabase):
 
     def view(self, design_doc, view):
         return View(self, design_doc, view)
+
+    async def create_design_doc(self, id, exists_ok=False):
+        ddoc = DesignDocument(self, id)
+
+        if await ddoc._exists():
+            if exists_ok:
+                await ddoc.fetch(discard_changes=True)
+            else:
+                raise KeyError(
+                    f"The design document '{id}' does already exist in the database '{self.id}'"
+                )
+
+        return ddoc
 
     async def find(self, selector, limit=None, **params):
         # we need to get the complete doc, so fields selector isn't allowed

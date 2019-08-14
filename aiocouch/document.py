@@ -118,7 +118,5 @@ class Document(RemoteDocument):
     def setdefault(self, key, default=None):
         return self._data.setdefault(key, default)
 
-    # TODO, do we need a del checking for dirty caches?
-
     def __repr__(self):
         return json.dumps(self._data, indent=2)

@@ -56,13 +56,24 @@ async def filled_database(database):
 
 
 @pytest.fixture
+async def filled_database_with_view(filled_database):
+    ddoc = await filled_database.create_design_doc("test_ddoc")
+    await ddoc.create_view("null_view", "function (doc) { emit(doc._id, null); }")
+    await ddoc.create_view("full_view", "function (doc) { emit(doc._id, doc); }")
+    await ddoc.create_view("bar_view", "function (doc) { emit(doc._id, doc.bar); }")
+
+    yield filled_database
+
+
+@pytest.fixture
 async def large_filled_database(database):
-    async with database.update_docs([f'doc{i}' for i in range(2000)], create=True) as docs:
+    async with database.update_docs(
+        [f"doc{i}" for i in range(2000)], create=True
+    ) as docs:
         async for doc in docs:
             doc["llama"] = "awesome"
 
     yield database
-
 
 
 @pytest.fixture

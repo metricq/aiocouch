@@ -213,9 +213,6 @@ class RemoteDocument(object):
             "COPY", self.endpoint, params=params, headers={"Destination": destination}
         )
 
-    async def _create(self, data, **params):
-        await self._database._remote._post(f"/{self._database.id}", data, params)
-
 
 class RemoteView(object):
     def __init__(self, database, ddoc, id):
