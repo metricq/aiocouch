@@ -170,7 +170,7 @@ async def test_find_limited(filled_database):
 
 async def test_find_invalid_selector(database):
     with pytest.raises(ValueError):
-        matching_docs = [
+        [
             doc
             async for doc in database.find({"bar": True, "fields": "anything"}, limit=1)
         ]
