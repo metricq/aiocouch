@@ -21,6 +21,10 @@ async def couchdb():
     except KeyError:
         password = "admin"
 
+    if user == "":
+        user = None
+        password = None
+
     async with CouchDB(hostname, user=user, password=password) as couchdb:
         yield couchdb
 
