@@ -24,7 +24,7 @@ async def test_session(event_loop, couchdb):
     try:
         user = os.environ["COUCHDB_USER"]
     except KeyError:
-        user = "admin"
+        user = None
 
     assert user == response["userCtx"]["name"]
 
