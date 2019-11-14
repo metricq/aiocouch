@@ -13,9 +13,6 @@ jobs:
 
     steps:
     - name: Setup CouchDB
-      env:
-        COUCHDB_USER: admin
-        COUCHDB_PASSWORD: admin
       uses: cobot/couchdb-action@v2
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
@@ -34,9 +31,6 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
-      env:
-        COUCHDB_USER: admin
-        COUCHDB_PASS: admin
       run: |
         pip install pytest
         pytest

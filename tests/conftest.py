@@ -14,16 +14,12 @@ async def couchdb():
     try:
         user = os.environ["COUCHDB_USER"]
     except KeyError:
-        user = "admin"
+        user = None
 
     try:
         password = os.environ["COUCHDB_PASS"]
     except KeyError:
-        password = "admin"
-
-    if user == "":
-        user = None
-        password = None
+        password = ""
 
     async with CouchDB(hostname, user=user, password=password) as couchdb:
         yield couchdb
