@@ -13,6 +13,9 @@ jobs:
 
     steps:
     - name: Setup CouchDB
+      env:
+        COUCHDB_USER: admin
+        COUCHDB_PASSWORD: admin
       uses: cobot/couchdb-action@v2
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
@@ -32,7 +35,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       env:
-        COUCHDB_USER: 
+        COUCHDB_USER: admin
+        COUCHDB_PASS: admin
       run: |
         pip install pytest
         pytest
