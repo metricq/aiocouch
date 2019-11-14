@@ -58,9 +58,8 @@ def _stringify_params(params):
 class RemoteServer(object):
     def __init__(self, server, user=None, password=None, **kwargs):
         self._server = server
-        self._http_session = aiohttp.ClientSession(
-            auth=aiohttp.BasicAuth(user, password), **kwargs
-        )
+        auth = aiohttp.BasicAuth(user, password) if user else None
+        self._http_session = aiohttp.ClientSession(auth=auth, **kwargs)
         self._databases = {}
 
     async def __aenter__(self):
