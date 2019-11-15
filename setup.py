@@ -9,7 +9,7 @@ setup(
     python_requires=">=3.6",
     packages=["aiocouch"],
     scripts=[],
-    install_requires=["aiohttp"],
+    install_requires=["aiohttp~=3.0"],
     setup_requires=["pytest-runner"],
     tests_require=test_deps,
     extras_require={
