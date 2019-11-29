@@ -1,3 +1,5 @@
+from aiocouch import ConflictError
+
 import pytest
 
 # All test coroutines will be treated as marked.
@@ -67,6 +69,19 @@ async def test_save_with_data(database):
     assert doc["_rev"].startswith("1-")
     assert doc["blub"] == "blubber"
     assert doc._dirty_cache is False
+
+
+async def test_conflict(filled_database):
+    doc1 = await filled_database["foo"]
+    doc2 = await filled_database["foo"]
+
+    doc1["blub"] = "new"
+    await doc1.save()
+
+    doc2["blub"] = "bar"
+
+    with pytest.raises(ConflictError):
+        await doc2.save()
 
 
 async def test_update(filled_database):

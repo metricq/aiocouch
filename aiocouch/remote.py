@@ -28,10 +28,18 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import asyncio
-from urllib.parse import quote
+from .exception import (
+    BadRequestError,
+    ConflictError,
+    UnauthorizedError,
+    NotFoundError,
+    raises,
+)
 
+import asyncio
 import aiohttp
+
+from urllib.parse import quote
 
 
 def _quote_id(id):
@@ -68,45 +76,6 @@ class RemoteServer(object):
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.close()
 
-    @staticmethod
-    async def _check_return_code(method, resp):
-        # print("------- New Request -------")
-        # print(f"{resp.request_info}:")
-        # print(f"Received from {resp.method} {resp.url}: {resp}")
-
-        if resp.status in range(200, 300):
-            # import json
-            # print(f"{json.dumps(await resp.json(), indent=2)}")
-
-            return
-
-        if resp.status == 302:
-            return
-
-        url = resp.url
-
-        if resp.status == 404:
-            raise KeyError(
-                f"The request ({method} {url}) returned an error '{resp.reason}' ({resp.status})"
-            )
-        elif resp.status in range(400, 500):
-            json = await resp.json()
-            if json and "reason" in json:
-                reason = f": '{json['reason']}'"
-            else:
-                reason = ""
-            raise RuntimeError(
-                f"The request ({method} {url}) returned an error '{resp.reason}' ({resp.status}){reason}"
-            )
-        elif resp.status == 500:
-            raise RuntimeError(
-                f"The request ({method} {url}) returned an internal server error (500)"
-            )
-
-        raise NotImplementedError(
-            f"The request ({method} {url}) returned an unexpected result ({resp.status}): '{resp.reason}'"
-        )
-
     async def _get(self, path, params=None):
         return await self._request("GET", path, params=params)
 
@@ -131,7 +100,7 @@ class RemoteServer(object):
         async with self._http_session.request(
             method, url=f"{self._server}{path}", **kwargs
         ) as resp:
-            await self._check_return_code(method, resp)
+            resp.raise_for_status()
             return await resp.json()
 
     async def _all_dbs(self, **params):
@@ -155,27 +124,46 @@ class RemoteDatabase(object):
         try:
             await self._remote._head(self.endpoint)
             return True
-        except KeyError:
-            return False
+        except aiohttp.ClientResponseError as e:
+            if e.status == 404:
+                return False
+            else:
+                raise e
 
+    @raises(404, "Requested database not found ({id})")
     async def _get(self):
         return self._remote._get(self.endpoint)
 
+    @raises(400, "Invalid database name")
+    @raises(401, "CouchDB Server Administrator privileges required")
+    @raises(412, "Database already exists")
     async def _put(self, **params):
         return await self._remote._put(self.endpoint)
 
+    @raises(400, "Invalid database name or forgotten document id by accident")
+    @raises(401, "CouchDB Server Administrator privileges required")
+    @raises(404, "Database doesn’t exist or invalid database name ({id})")
     async def _delete(self):
         await self._remote._delete(self.endpoint)
 
+    @raises(400, "The request provided invalid JSON data or invalid query parameter")
+    @raises(401, "Read permission required")
+    @raises(404, "Invalid database name")
+    @raises(415, "Bad Content-Type value")
     async def _bulk_get(self, docs, **params):
         return await self._remote._post(
             f"{self.endpoint}/_bulk_get", {"docs": docs}, params
         )
 
+    @raises(400, "The request provided invalid JSON data")
+    @raises(417, "At least one document was rejected by the validation function")
     async def _bulk_docs(self, docs, **data):
         data["docs"] = docs
         return await self._remote._post(f"{self.endpoint}/_bulk_docs", data)
 
+    @raises(400, "Invalid request")
+    @raises(401, "Read privilege required for document '{id}'")
+    @raises(500, "Query execution failed", RuntimeError)
     async def _find(self, selector, **data):
         data["selector"] = selector
         return await self._remote._post(f"{self.endpoint}/_find", data)
@@ -190,23 +178,52 @@ class RemoteDocument(object):
     def endpoint(self):
         return f"{self._database.endpoint}/{_quote_id(self.id)}"
 
+    @raises(401, "Read privilege required for document '{id}'")
     async def _exists(self):
         try:
             await self._database._remote._head(self.endpoint)
             return True
-        except KeyError:
-            return False
+        except aiohttp.ClientResponseError as e:
+            if e.status == 404:
+                return False
+            else:
+                raise e
 
+    @raises(400, "The format of the request or revision was invalid")
+    @raises(401, "Read privilege required for document '{id}'")
+    @raises(404, "Document {id} was not found")
     async def _get(self, **params):
         return await self._database._remote._get(self.endpoint, params)
 
+    @raises(400, "The format of the request or revision was invalid")
+    @raises(401, "Write privilege required for document '{id}'")
+    @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
+    @raises(
+        409,
+        "Document with the specified ID ({id}) already exists or specified revision {rev} is not latest for target document",
+    )
     async def _put(self, data, **params):
         return await self._database._remote._put(self.endpoint, data, params)
 
+    @raises(400, "Invalid request body or parameters")
+    @raises(401, "Write privilege required for document '{id}'")
+    @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
+    @raises(
+        409, "Specified revision ({rev}) is not the latest for target document '{id}'"
+    )
     async def _delete(self, rev, **params):
         params["rev"] = rev
         return await self._database._remote._delete(self.endpoint, params)
 
+    @raises(400, "Invalid request body or parameters")
+    @raises(401, "Read or write privileges required")
+    @raises(
+        404, "Specified database, document ID or revision doesn’t exists ({endpoint})"
+    )
+    @raises(
+        409,
+        "Document with the specified ID already exists or specified revision is not latest for target document",
+    )
     async def _copy(self, destination, **params):
         return await self._database._remote._request(
             "COPY", self.endpoint, params=params, headers={"Destination": destination}
@@ -223,8 +240,14 @@ class RemoteView(object):
     def endpoint(self):
         return f"{self._database.endpoint}/_design/{_quote_id(self.ddoc)}/_view/{_quote_id(self.id)}"
 
+    @raises(400, "Invalid request")
+    @raises(401, "Read privileges required")
+    @raises(404, "Specified database, design document or view is missing")
     async def _get(self, **params):
         return await self._database._remote._get(self.endpoint, params)
 
+    @raises(400, "Invalid request")
+    @raises(401, "Read privileges required")
+    @raises(404, "Specified database, design document or view is missing")
     async def _post(self, keys, **params):
         return await self._database._remote._post(self.endpoint, {"keys": keys}, params)
