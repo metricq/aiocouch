@@ -74,7 +74,7 @@ class Database(RemoteDatabase):
     def view(self, design_doc, view):
         return View(self, design_doc, view)
 
-    async def create_design_doc(self, id, exists_ok=False):
+    async def design_doc(self, id, exists_ok=False):
         ddoc = DesignDocument(self, id)
 
         if await ddoc._exists():
@@ -116,3 +116,6 @@ class Database(RemoteDatabase):
         doc = Document(self, id)
         await doc.fetch(discard_changes=True)
         return doc
+
+    async def info(self):
+        return await self._get()

@@ -57,7 +57,7 @@ async def filled_database(database):
 
 @pytest.fixture
 async def filled_database_with_view(filled_database):
-    ddoc = await filled_database.create_design_doc("test_ddoc")
+    ddoc = await filled_database.design_doc("test_ddoc")
     await ddoc.create_view("null_view", "function (doc) { emit(doc._id, null); }")
     await ddoc.create_view("full_view", "function (doc) { emit(doc._id, doc); }")
     await ddoc.create_view("bar_view", "function (doc) { emit(doc._id, doc.bar); }")

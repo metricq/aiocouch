@@ -28,13 +28,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .exception import (
-    BadRequestError,
-    ConflictError,
-    UnauthorizedError,
-    NotFoundError,
-    raises,
-)
+from .exception import raises
 
 import asyncio
 import aiohttp
@@ -85,9 +79,6 @@ class RemoteServer(object):
     async def _post(self, path, data, params=None):
         return await self._request("POST", path, json=data, params=params)
 
-    async def _patch(self, path, data, params=None):
-        return await self._request("PATCH", path, json=data, params=params)
-
     async def _delete(self, path, params=None):
         return await self._request("DELETE", path, params=params)
 
@@ -132,7 +123,7 @@ class RemoteDatabase(object):
 
     @raises(404, "Requested database not found ({id})")
     async def _get(self):
-        return self._remote._get(self.endpoint)
+        return await self._remote._get(self.endpoint)
 
     @raises(400, "Invalid database name")
     @raises(401, "CouchDB Server Administrator privileges required")

@@ -45,3 +45,7 @@ async def test_get_for_existing(couchdb, database):
 async def test_get_for_non_existing(couchdb, database):
     with pytest.raises(KeyError):
         await couchdb[database.id + "not_existing"]
+
+
+async def test_get_info(database):
+    await database.info()

@@ -50,7 +50,8 @@ def raise_for_endpoint(endpoint, message, exception, exception_type=None):
             exception_type = ExpectationFailedError
         else:
             raise ValueError(
-                "Something went wrong, but I couldn't deduce the type of exception and format a nice exception for you. I'm sorry."
+                "Something went wrong, but I couldn't deduce the type of exception nor "
+                "format a nice exception for you. I'm sorry."
             ) from exception
 
     message_input = {"id": endpoint.id, "endpoint": endpoint.endpoint}

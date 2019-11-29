@@ -70,6 +70,13 @@ async def test_update_docs(database):
         assert doc["llama"] == "awesome"
 
 
+async def test_update_docs_no_change(filled_database):
+    async with filled_database.update_docs(["foo", "baz"]) as docs:
+        pass
+
+    assert docs.status == []
+
+
 async def test_update_docs_for_deleted(filled_database):
     doc = await filled_database["foo"]
     await doc.delete()
@@ -212,3 +219,18 @@ async def test_many_docs(large_filled_database):
         doc async for doc in large_filled_database.find(selector={"llama": "awesome"})
     ]
     assert len(find_docs) == 2000
+
+
+async def test_get_design_doc(filled_database_with_view):
+    await filled_database_with_view.design_doc("test_ddoc2")
+    await filled_database_with_view.design_doc("test_ddoc", exists_ok=True)
+
+    with pytest.raises(KeyError):
+        await filled_database_with_view.design_doc("test_ddoc")
+
+
+async def test_set_invalid_design_doc_key(filled_database_with_view):
+    ddoc = await filled_database_with_view.design_doc("test_ddoc", exists_ok=True)
+
+    with pytest.raises(KeyError):
+        ddoc["foo"] = "bar"
