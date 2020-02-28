@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/metricq/aiocouch.svg?branch=master)](https://travis-ci.com/metricq/aiocouch)
+![Python package](https://github.com/metricq/aiocouch/workflows/Python%20package/badge.svg)
 
 # aiocouch
 An asynchronous client library for CouchDB 2.0 based on asyncio using aiohttp
