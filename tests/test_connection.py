@@ -29,7 +29,35 @@ async def test_session(event_loop, couchdb):
     assert user == response["userCtx"]["name"]
 
 
-async def test_with(event_loop):
+async def test_cookie_authentication(event_loop, couchdb_user):
+    from aiocouch import CouchDB
+
+    import aiohttp
+
+    import os
+
+    try:
+        hostname = os.environ["COUCHDB_HOST"]
+    except KeyError:
+        hostname = "http://localhost:5984"
+
+    user = "aiocouch_test_user"
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            f"{hostname}/_session", data={"name": user, "password": user},
+        ) as resp:
+            assert resp.status == 200
+            await resp.json()
+            cookie = resp.cookies["AuthSession"].value
+
+    async with CouchDB(hostname, cookie=cookie) as couchdb:
+        response = await couchdb._server._get("/_session")
+
+        assert user == response["userCtx"]["name"]
+
+
+async def test_basic_authentication(event_loop):
     from aiocouch.remote import RemoteServer
     import os
 
