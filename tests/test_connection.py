@@ -41,12 +41,32 @@ async def test_with(event_loop):
     try:
         user = os.environ["COUCHDB_USER"]
     except KeyError:
-        user = "admin"
+        user = None
 
     try:
         password = os.environ["COUCHDB_PASS"]
     except KeyError:
-        password = "admin"
+        password = ""
 
     async with RemoteServer(hostname, user=user, password=password):
         pass
+
+
+async def test_with_wrong_credentials(event_loop):
+    from aiocouch.remote import RemoteServer
+    from aiocouch.exception import UnauthorizedError
+
+    import os
+
+    try:
+        hostname = os.environ["COUCHDB_HOST"]
+    except KeyError:
+        hostname = "http://localhost:5984"
+
+    with pytest.raises(UnauthorizedError):
+        async with RemoteServer(
+            hostname,
+            user="invalid",
+            password="rcvy438tyb7est0fb38s4tybf74etbc7843tybfs4fb7v49bstf68bs495ftb63948ft5b9s6",
+        ):
+            pass

@@ -54,8 +54,11 @@ def raise_for_endpoint(endpoint, message, exception, exception_type=None):
                 "format a nice exception for you. I'm sorry."
             ) from exception
 
-    message_input = {"id": endpoint.id, "endpoint": endpoint.endpoint}
+    message_input = {}
+
     with suppress(KeyError, AttributeError):
+        message_input["id"] = endpoint.id
+        message_input["endpoint"] = endpoint.endpoint
         message_input["rev"] = endpoint._data["_rev"]
 
     raise exception_type(message.format(**message_input)) from exception

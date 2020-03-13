@@ -61,12 +61,12 @@ class RemoteServer(object):
     def __init__(self, server, user=None, password=None, cookie=None, **kwargs):
         self._server = server
         auth = aiohttp.BasicAuth(user, password) if user else None
-        headers = {'Cookie': 'AuthSession=' + cookie} if cookie else None
-        self._http_session = aiohttp.ClientSession(headers=headers, auth=auth,
-                                                   **kwargs)
+        headers = {"Cookie": "AuthSession=" + cookie} if cookie else None
+        self._http_session = aiohttp.ClientSession(headers=headers, auth=auth, **kwargs)
         self._databases = {}
 
     async def __aenter__(self):
+        await self._check_session()
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
@@ -102,6 +102,10 @@ class RemoteServer(object):
     async def close(self):
         await self._http_session.close()
         await asyncio.sleep(0.250)
+
+    @raises(401, "Authentification failed, check provided credentials.")
+    async def _check_session(self):
+        await self._get("/_session")
 
 
 class RemoteDatabase(object):
