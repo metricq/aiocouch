@@ -13,6 +13,11 @@ async def main_with():
         async for doc in database.docs(["db-hta"]):
             print(doc)
 
+    async with CouchDB(
+        "http://localhost:5984", cookie="ZGVtb0B0b2x0ZWNrLmNvbT..."
+    ) as couchdb:
+        await couchdb["_users"]
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
