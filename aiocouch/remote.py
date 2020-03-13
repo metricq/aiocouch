@@ -117,6 +117,7 @@ class RemoteDatabase(object):
     def endpoint(self):
         return f"/{_quote_id(self.id)}"
 
+    @raises(404, "Requested database not found ({id})")
     async def _exists(self):
         try:
             await self._remote._head(self.endpoint)
