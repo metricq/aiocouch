@@ -2,6 +2,25 @@ import pytest
 
 
 @pytest.fixture
+async def couchdb_user_account(couchdb):
+    users = await couchdb.create("_users", exists_ok=True)
+
+    doc = await users.create("org.couchdb.user:aiocouch_test_user")
+    doc["name"] = "aiocouch_test_user"
+    doc["password"] = "aiocouch_test_user"
+    doc["roles"] = []
+    doc["type"] = "user"
+
+    await doc.save()
+    assert doc["_id"] == "org.couchdb.user:aiocouch_test_user"
+    assert doc.id == "org.couchdb.user:aiocouch_test_user"
+
+    yield couchdb
+
+    await doc.delete()
+
+
+@pytest.fixture
 async def couchdb():
     from aiocouch import CouchDB
     import os
@@ -22,6 +41,22 @@ async def couchdb():
         password = ""
 
     async with CouchDB(hostname, user=user, password=password) as couchdb:
+        yield couchdb
+
+
+@pytest.fixture
+async def couchdb_user(couchdb_user_account):
+    from aiocouch import CouchDB
+    import os
+
+    try:
+        hostname = os.environ["COUCHDB_HOST"]
+    except KeyError:
+        hostname = "http://localhost:5984"
+
+    async with CouchDB(
+        hostname, user="aiocouch_test_user", password="aiocouch_test_user"
+    ) as couchdb:
         yield couchdb
 
 
