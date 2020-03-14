@@ -103,8 +103,9 @@ class RemoteServer(object):
         # If ClientSession has TLS/SSL connections, it is needed to wait 250 ms
         # before closing, see https://github.com/aio-libs/aiohttp/issues/1925.
         has_ssl_conn = self._http_session.connector and any(
-            any(hasattr(handler.transport, '_ssl_protocol') for handler, _ in conn)
-            for conn in self._http_session.connector._conns.values())
+            any(hasattr(handler.transport, "_ssl_protocol") for handler, _ in conn)
+            for conn in self._http_session.connector._conns.values()
+        )
         await self._http_session.close()
         await asyncio.sleep(0.250 if has_ssl_conn else 0)
 
