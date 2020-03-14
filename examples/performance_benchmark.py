@@ -1,6 +1,5 @@
 import asyncio
 import timeit
-import re
 
 from aiocouch import CouchDB
 
