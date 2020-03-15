@@ -204,7 +204,8 @@ class RemoteDocument(object):
     @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
     @raises(
         409,
-        "Document with the specified ID ({id}) already exists or specified revision {rev} is not latest for target document",
+        "Document with the specified ID ({id}) already exists or specified revision {rev} "
+        "is not latest for target document",
     )
     async def _put(self, data, **params):
         return await self._database._remote._put(self.endpoint, data, params)
@@ -226,7 +227,8 @@ class RemoteDocument(object):
     )
     @raises(
         409,
-        "Document with the specified ID already exists or specified revision is not latest for target document",
+        "Document with the specified ID already exists or specified revision is not latest for "
+        "target document",
     )
     async def _copy(self, destination, **params):
         return await self._database._remote._request(
@@ -242,7 +244,10 @@ class RemoteView(object):
 
     @property
     def endpoint(self):
-        return f"{self._database.endpoint}/_design/{_quote_id(self.ddoc)}/_view/{_quote_id(self.id)}"
+        return (
+            f"{self._database.endpoint}/_design/{_quote_id(self.ddoc)}/_view/"
+            f"{_quote_id(self.id)}"
+        )
 
     @raises(400, "Invalid request")
     @raises(401, "Read privileges required")
