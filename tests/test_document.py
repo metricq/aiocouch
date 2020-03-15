@@ -18,10 +18,12 @@ async def test_save(database):
 
 
 async def test_fetch_dirty_document(database):
+    from aiocouch import ConflictError
+
     doc = await database.create("foo")
 
     doc["dirty"] = "shitz"
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         await doc.fetch()
 
 
@@ -122,11 +124,13 @@ async def test_delete(filled_database):
 
 
 async def test_delete_dirty(filled_database):
+    from aiocouch import ConflictError
+
     doc = await filled_database["foo"]
 
     doc["fuzzy"] = "lizzy"
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         await doc.delete()
 
 

@@ -1,4 +1,5 @@
 from .document import Document
+from .exception import NotFoundError
 from .remote import RemoteView
 
 
@@ -75,8 +76,9 @@ class View(RemoteView):
                 doc = Document(self._database, res["key"])
                 yield doc
             else:
-                raise KeyError(
-                    f"The document '{res['key']}' does not exist in the database {self._database.id}."
+                raise NotFoundError(
+                    f"The document '{res['key']}' does not exist in the database "
+                    f"{self._database.id}."
                 )
 
 

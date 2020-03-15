@@ -16,7 +16,7 @@ class NotFoundError(KeyError):
     pass
 
 
-class ConflictError(RuntimeError):
+class ConflictError(KeyError):
     pass
 
 

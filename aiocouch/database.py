@@ -31,6 +31,7 @@
 from .bulk import BulkOperation
 from .document import Document
 from .design_document import DesignDocument
+from .exception import ConflictError
 from .remote import RemoteDatabase
 from .view import AllDocsView, View
 
@@ -50,7 +51,7 @@ class Database(RemoteDatabase):
             if exists_ok:
                 await doc.fetch(discard_changes=True)
             else:
-                raise KeyError(
+                raise ConflictError(
                     f"The document '{id}' does already exist in the database '{self.id}'"
                 )
 
@@ -81,7 +82,7 @@ class Database(RemoteDatabase):
             if exists_ok:
                 await ddoc.fetch(discard_changes=True)
             else:
-                raise KeyError(
+                raise ConflictError(
                     f"The design document '{id}' does already exist in the database '{self.id}'"
                 )
 

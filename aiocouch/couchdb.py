@@ -1,6 +1,6 @@
-from .remote import RemoteServer
+from .exception import ConflictError, NotFoundError, UnauthorizedError
 from .database import Database
-from .exception import UnauthorizedError
+from .remote import RemoteServer
 
 
 class CouchDB(object):
@@ -32,13 +32,13 @@ class CouchDB(object):
         elif exists_ok:
             return db
         else:
-            raise KeyError(f"The database '{id}' does already exist.")
+            raise ConflictError(f"The database '{id}' does already exist.")
 
     async def __getitem__(self, id):
         db = Database(self, id)
 
         if not await db._exists():
-            raise KeyError(f"The database '{id}' does not exist.")
+            raise NotFoundError(f"The database '{id}' does not exist.")
 
         return db
 

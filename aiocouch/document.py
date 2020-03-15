@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .remote import RemoteDocument
+from .exception import ConflictError
 
 import json
 
@@ -50,8 +51,8 @@ class Document(RemoteDocument):
 
     async def fetch(self, discard_changes=False):
         if self._dirty_cache and not discard_changes:
-            raise ValueError(
-                "Cannot fetch document from server, as the local cache has unsaved changes."
+            raise ConflictError(
+                f"Cannot fetch document '{self.id}' from server, as the local cache has unsaved changes."
             )
         self._update_cache(await self._get())
 
@@ -62,8 +63,8 @@ class Document(RemoteDocument):
 
     async def delete(self, discard_changes=False):
         if self._dirty_cache and not discard_changes:
-            raise ValueError(
-                "Cannot fetch document from server, as the local cache has unsaved changes."
+            raise ConflictError(
+                f"Cannot delete document '{self.id}' from server, as the local cache has unsaved changes."
             )
         self._update_cache(await self._delete(rev=self["_rev"]))
 

@@ -1,4 +1,5 @@
 from .document import Document
+from .exception import ConflictError
 from .remote import _quote_id
 from .view import View
 
@@ -36,7 +37,7 @@ class DesignDocument(Document):
             self["views"] = {}
 
         if view in self["views"] and not exists_ok:
-            raise KeyError(
+            raise ConflictError(
                 f"The view '{view}' does already exist in the design document {self.id}"
             )
 
