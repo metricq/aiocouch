@@ -58,7 +58,7 @@ async def test_cookie_authentication(event_loop, couchdb_user):
 
 
 async def test_basic_authentication(event_loop):
-    from aiocouch.remote import RemoteServer
+    from aiocouch import CouchDB
     import os
 
     try:
@@ -76,13 +76,13 @@ async def test_basic_authentication(event_loop):
     except KeyError:
         password = ""
 
-    async with RemoteServer(hostname, user=user, password=password):
+    async with CouchDB(hostname, user=user, password=password):
         pass
 
 
 async def test_with_wrong_credentials(event_loop):
-    from aiocouch.remote import RemoteServer
-    from aiocouch.exception import UnauthorizedError
+    from aiocouch import CouchDB
+    from aiocouch import UnauthorizedError
 
     import os
 
@@ -92,7 +92,7 @@ async def test_with_wrong_credentials(event_loop):
         hostname = "http://localhost:5984"
 
     with pytest.raises(UnauthorizedError):
-        async with RemoteServer(
+        async with CouchDB(
             hostname,
             user="invalid",
             password="rcvy438tyb7est0fb38s4tybf74etbc7843tybfs4fb7v49bstf68bs495ftb63948ft5b9s6",

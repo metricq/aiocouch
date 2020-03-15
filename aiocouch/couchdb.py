@@ -1,5 +1,6 @@
 from .remote import RemoteServer
 from .database import Database
+from .exception import UnauthorizedError
 
 
 class CouchDB(object):
@@ -7,10 +8,18 @@ class CouchDB(object):
         self._server = RemoteServer(*args, **kwargs)
 
     async def __aenter__(self):
+        try:
+            await self.check_credentials()
+        except UnauthorizedError as e:
+            await self.close()
+            raise e
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.close()
+
+    async def check_credentials(self):
+        await self._server._check_session()
 
     async def close(self):
         await self._server.close()
