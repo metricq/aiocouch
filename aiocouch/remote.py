@@ -65,13 +65,6 @@ class RemoteServer(object):
         self._http_session = aiohttp.ClientSession(headers=headers, auth=auth, **kwargs)
         self._databases = {}
 
-    async def __aenter__(self):
-        await self._check_session()
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.close()
-
     async def _get(self, path, params=None):
         return await self._request("GET", path, params=params)
 
