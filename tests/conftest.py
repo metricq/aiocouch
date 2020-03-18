@@ -23,6 +23,7 @@ async def couchdb_user_account(couchdb):
 @pytest.fixture
 async def couchdb():
     from aiocouch import CouchDB
+    import asyncio
     import os
 
     try:
@@ -42,6 +43,12 @@ async def couchdb():
 
     async with CouchDB(hostname, user=user, password=password) as couchdb:
         yield couchdb
+
+    # Give the couchdb server some time, so the assumptions of an empty database isn't broken for
+    # subsequent tests. This delay used to be part of the disconnect procedure, but #6 removed that.
+    # Therefore, we do sleep for the previous amount here. This should give the server some time to
+    # delete the old fixtures.
+    await asyncio.sleep(0.250)
 
 
 @pytest.fixture
