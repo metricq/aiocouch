@@ -1,4 +1,4 @@
-from .exception import ConflictError, NotFoundError, UnauthorizedError
+from .exception import ConflictError, NotFoundError
 from .database import Database
 from .remote import RemoteServer
 
@@ -8,11 +8,6 @@ class CouchDB(object):
         self._server = RemoteServer(*args, **kwargs)
 
     async def __aenter__(self):
-        try:
-            await self.check_credentials()
-        except UnauthorizedError as e:
-            await self.close()
-            raise e
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):

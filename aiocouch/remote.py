@@ -89,6 +89,7 @@ class RemoteServer(object):
             resp.raise_for_status()
             return await resp.json()
 
+    @raises(401, "Invalid credentials")
     async def _all_dbs(self, **params):
         return await self._get("/_all_dbs", params)
 
@@ -116,7 +117,7 @@ class RemoteDatabase(object):
     def endpoint(self):
         return f"/{_quote_id(self.id)}"
 
-    @raises(404, "Requested database not found ({id})")
+    @raises(401, "Invalid credentials")
     async def _exists(self):
         try:
             await self._remote._head(self.endpoint)
@@ -127,6 +128,7 @@ class RemoteDatabase(object):
             else:
                 raise e
 
+    @raises(401, "Invalid credentials")
     @raises(404, "Requested database not found ({id})")
     async def _get(self):
         return await self._remote._get(self.endpoint)
@@ -153,6 +155,7 @@ class RemoteDatabase(object):
         )
 
     @raises(400, "The request provided invalid JSON data")
+    @raises(401, "Invalid credentials")
     @raises(417, "At least one document was rejected by the validation function")
     async def _bulk_docs(self, docs, **data):
         data["docs"] = docs
