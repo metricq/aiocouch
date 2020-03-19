@@ -103,6 +103,10 @@ class RemoteServer(object):
         await self._http_session.close()
         await asyncio.sleep(0.250 if has_ssl_conn else 0)
 
+    @raises(401, "Invalid credentials")
+    async def _info(self):
+        return await self._get("/")
+
     @raises(401, "Authentification failed, check provided credentials.")
     async def _check_session(self):
         await self._get("/_session")

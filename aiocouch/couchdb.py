@@ -39,3 +39,6 @@ class CouchDB(object):
 
     async def keys(self, **params):
         return await self._server._all_dbs(**params)
+
+    async def info(self):
+        return await self._server._info()
