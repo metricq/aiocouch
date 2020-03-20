@@ -8,6 +8,8 @@ async def main_with():
         "http://localhost:5984", user="admin", password="admin"
     ) as couchdb:
 
+        print((await couchdb.info())["version"])
+
         database = await couchdb["config"]
 
         async for doc in database.docs(["db-hta"]):

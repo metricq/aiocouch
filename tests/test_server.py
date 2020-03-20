@@ -47,5 +47,9 @@ async def test_get_for_non_existing(couchdb, database):
         await couchdb[database.id + "not_existing"]
 
 
-async def test_get_info(database):
+async def test_get_info(couchdb):
+    await couchdb.info()
+
+
+async def test_get_database_info(database):
     await database.info()
