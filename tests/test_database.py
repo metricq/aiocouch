@@ -16,6 +16,66 @@ async def test_create_document(database):
     assert doc.id in [key async for key in database.akeys()]
 
 
+async def test_getitem_for_existing(filled_database):
+    doc = await filled_database["foo"]
+
+    assert doc["bar"] is True
+    assert doc["_id"] == doc.id == "foo"
+    assert doc["_rev"].startswith("1-")
+    assert doc._dirty_cache is False
+
+
+async def test_getitem_for_non_existing(database):
+    with pytest.raises(KeyError):
+        await database["foo"]
+
+
+async def test_create_for_existing(filled_database):
+    with pytest.raises(KeyError):
+        await filled_database.create("foo")
+
+
+async def test_create_for_existing_exists_true(filled_database):
+    doc = await filled_database.create("foo", exists_ok=True)
+
+    assert doc["bar"] is True
+    assert doc["_id"] == doc.id == "foo"
+    assert doc["_rev"].startswith("1-")
+    assert doc._dirty_cache is False
+
+
+async def test_get_for_existing(filled_database):
+    doc = await filled_database.get("foo")
+
+    assert doc["bar"] is True
+    assert doc["_id"] == doc.id == "foo"
+    assert doc["_rev"].startswith("1-")
+    assert doc._dirty_cache is False
+
+
+async def test_get_for_non_existing(database):
+    with pytest.raises(KeyError):
+        await database.get("foo")
+
+
+async def test_get_for_non_existing_with_create(database):
+    doc = await database.get("foo", create=True)
+
+    assert doc["_id"] == doc.id == "foo"
+    assert "_rev" not in doc
+    assert doc._dirty_cache is True
+
+
+async def test_get_for_non_existing_with_default(database):
+    doc = await database.get("foo", default={"jumbo": "dumbo", "value": 42})
+
+    assert doc["_id"] == doc.id == "foo"
+    assert "_rev" not in doc
+    assert doc["jumbo"] == "dumbo"
+    assert doc["value"] == 42
+    assert doc._dirty_cache is True
+
+
 async def test_akeys_with_prefix(filled_database):
     keys = [key async for key in filled_database.akeys(prefix="ba")]
 

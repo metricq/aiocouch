@@ -27,34 +27,6 @@ async def test_fetch_dirty_document(database):
         await doc.fetch()
 
 
-async def test_get_for_existing(filled_database):
-    doc = await filled_database["foo"]
-
-    assert doc["bar"] is True
-    assert doc["_id"] == doc.id == "foo"
-    assert doc["_rev"].startswith("1-")
-    assert doc._dirty_cache is False
-
-
-async def test_create_for_existing(filled_database):
-    with pytest.raises(KeyError):
-        await filled_database.create("foo")
-
-
-async def test_create_for_existing_exists_true(filled_database):
-    doc = await filled_database.create("foo", exists_ok=True)
-
-    assert doc["bar"] is True
-    assert doc["_id"] == doc.id == "foo"
-    assert doc["_rev"].startswith("1-")
-    assert doc._dirty_cache is False
-
-
-async def test_get_for_non_existing(database):
-    with pytest.raises(KeyError):
-        await database["foo"]
-
-
 async def test_save_with_data(database):
     doc = await database.create("foo")
 
@@ -143,11 +115,6 @@ async def test_copy(filled_database):
         if key == "_id":
             continue
         assert foo_copy[key] == foo[key]
-
-
-async def test_fetch_non_existant(database):
-    with pytest.raises(KeyError):
-        await database["foo"]
 
 
 async def test_doc_update(doc):
