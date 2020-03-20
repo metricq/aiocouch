@@ -110,6 +110,11 @@ class Database(RemoteDatabase):
 
             params["bookmark"] = result_chunk["bookmark"]
 
+    async def save(self, doc):
+        document = Document(self, doc["_id"])
+        document.update(doc)
+        return await document.save()
+
     def update_docs(self, ids, create=False):
         return BulkOperation(self, ids, create)
 
