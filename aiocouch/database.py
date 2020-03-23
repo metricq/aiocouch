@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .bulk import BulkOperation
-from .document import Document
+from .document import Document, SecurityDocument
 from .design_document import DesignDocument
 from .exception import ConflictError, NotFoundError
 from .remote import RemoteDatabase
@@ -132,12 +132,10 @@ class Database(RemoteDatabase):
 
         return doc
 
+    async def security(self):
+        doc = SecurityDocument(self)
+        await doc.fetch(discard_changes=True)
+        return doc
+
     async def info(self):
         return await self._get()
-
-    # Document _security is special, it doesn't have _id nor revisions.
-    async def get_security(self):
-        return await self._get_security()
-
-    async def set_security(self, doc):
-        return await self._put_security(doc)

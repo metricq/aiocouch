@@ -29,8 +29,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .remote import RemoteDocument
-from .exception import ConflictError
+from .exception import ConflictError, ForbiddenError, raises
 
+from contextlib import suppress
 import json
 
 
@@ -59,7 +60,7 @@ class Document(RemoteDocument):
     async def save(self):
         if self._dirty_cache:
             data = await self._put(self._data)
-            self._update_rev_after_save(data["rev"])
+            self._update_rev_after_save(data)
 
     async def delete(self, discard_changes=False):
         if self._dirty_cache and not discard_changes:
@@ -81,8 +82,9 @@ class Document(RemoteDocument):
     def exists(self):
         return "_rev" in self and "_deleted" not in self
 
-    def _update_rev_after_save(self, rev):
-        self._data["_rev"] = rev
+    def _update_rev_after_save(self, data):
+        with suppress(KeyError):
+            self._data["_rev"] = data["rev"]
         self._update_hash()
 
     def _update_cache(self, new_cache):
@@ -121,3 +123,58 @@ class Document(RemoteDocument):
 
     def __repr__(self):
         return json.dumps(self._data, indent=2)
+
+
+class SecurityDocument(Document):
+    def __init__(self, database):
+        super().__init__(database, "_security")
+        del self._data["_id"]
+
+    async def fetch(self, discard_changes=False):
+        await super().fetch(discard_changes)
+        self.setdefault("members", {"names": [], "roles": []})
+        self.setdefault("admins", {"names": [], "roles": []})
+
+    @property
+    def members(self):
+        return self["members"]["names"]
+
+    @property
+    def member_roles(self):
+        return self["members"]["roles"]
+
+    @property
+    def admins(self):
+        return self["admins"]["names"]
+
+    @property
+    def admin_roles(self):
+        return self["admins"]["roles"]
+
+    def add_member(self, member):
+        if member not in self["members"]["names"]:
+            self["members"]["names"].append(member)
+
+    def remove_member(self, member):
+        if member in self["members"]["names"]:
+            self["members"]["names"].remove(member)
+        else:
+            raise KeyError(
+                f"The user '{member}' isn't a member of the database '{self._database.id}'"
+            )
+
+    def add_admin(self, admin):
+        if admin not in self["admins"]["names"]:
+            self["admins"]["names"].append(admin)
+
+    def remove_admin(self, admin):
+        if admin in self["admins"]["names"]:
+            self["admins"]["names"].remove(admin)
+        else:
+            raise KeyError(
+                f"The user '{admin}' isn't an admin of the database '{self._database.id}'"
+            )
+
+    @raises(500, "You are not a database or server admin", ForbiddenError)
+    async def save(self):
+        await super().save()

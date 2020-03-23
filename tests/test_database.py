@@ -294,3 +294,57 @@ async def test_set_invalid_design_doc_key(filled_database_with_view):
 
     with pytest.raises(KeyError):
         ddoc["foo"] = "bar"
+
+
+async def test_get_security(database):
+    sec = await database.security()
+
+    assert len(sec.members) == 0
+    assert len(sec.admins) == 0
+
+    assert len(sec.member_roles) == 0
+    assert len(sec.admin_roles) == 0
+
+
+async def test_security_add_members(database):
+    sec = await database.security()
+    sec.add_member("foobert")
+
+    await sec.save()
+
+    sec2 = await database.security()
+    assert "foobert" in sec2.members
+
+    sec2.remove_member("foobert")
+    await sec2.save()
+
+    sec3 = await database.security()
+    assert "foobert" not in sec3.members
+
+
+async def test_security_remove_member(database):
+    sec = await database.security()
+    with pytest.raises(KeyError):
+        sec.remove_member("foobert")
+
+
+async def test_security_add_admins(database):
+    sec = await database.security()
+    sec.add_admin("foobert")
+
+    await sec.save()
+
+    sec2 = await database.security()
+    assert "foobert" in sec2.admins
+
+    sec2.remove_admin("foobert")
+    await sec2.save()
+
+    sec3 = await database.security()
+    assert "foobert" not in sec3.admins
+
+
+async def test_security_remove_admin(database):
+    sec = await database.security()
+    with pytest.raises(KeyError):
+        sec.remove_admin("foobert")
