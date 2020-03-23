@@ -58,8 +58,8 @@ async def test_get_for_non_existing(database):
         await database.get("foo")
 
 
-async def test_get_for_non_existing_with_create(database):
-    doc = await database.get("foo", create=True)
+async def test_get_for_non_existing_with_empty_default(database):
+    doc = await database.get("foo", default={})
 
     assert doc["_id"] == doc.id == "foo"
     assert "_rev" not in doc

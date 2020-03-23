@@ -116,10 +116,8 @@ class Database(RemoteDatabase):
     async def __getitem__(self, id):
         return await self.get(id)
 
-    async def get(self, id, default=None, create=False):
+    async def get(self, id, default=None):
         doc = Document(self, id)
-        if create and not default:
-            default = {}
 
         try:
             await doc.fetch(discard_changes=True)
