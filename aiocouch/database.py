@@ -117,8 +117,19 @@ class Database(RemoteDatabase):
         return BulkOperation(self, ids, create)
 
     async def __getitem__(self, id):
+        return await self.get(id)
+
+    async def get(self, id, default=None):
         doc = Document(self, id)
-        await doc.fetch(discard_changes=True)
+
+        try:
+            await doc.fetch(discard_changes=True)
+        except NotFoundError as e:
+            if default is not None:
+                doc.update(default)
+            else:
+                raise e
+
         return doc
 
     async def info(self):
