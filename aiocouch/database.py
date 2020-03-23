@@ -120,3 +120,10 @@ class Database(RemoteDatabase):
 
     async def info(self):
         return await self._get()
+
+    # Document _security is special, it doesn't have _id nor revisions.
+    async def get_security(self):
+        return await self._get_security()
+
+    async def set_security(self, doc):
+        return await self._put_security(doc)

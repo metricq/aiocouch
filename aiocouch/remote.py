@@ -172,6 +172,14 @@ class RemoteDatabase(object):
         data["selector"] = selector
         return await self._remote._post(f"{self.endpoint}/_find", data)
 
+    @raises(401, "Invalid credentials")
+    async def _get_security(self):
+        return await self._remote._get(f"{self.endpoint}/_security")
+
+    @raises(401, "Invalid credentials")
+    async def _put_security(self, doc):
+        return await self._remote._put(f"{self.endpoint}/_security", doc)
+
 
 class RemoteDocument(object):
     def __init__(self, database, id):
