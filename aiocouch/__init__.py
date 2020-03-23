@@ -3,6 +3,7 @@ from .exception import (
     BadRequestError,
     ConflictError,
     UnauthorizedError,
+    ForbiddenError,
     NotFoundError,
     ExpectationFailedError,
     PreconditionFailedError,
