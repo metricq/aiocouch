@@ -8,7 +8,7 @@ async def couchdb_user_account(couchdb):
     doc = await users.create("org.couchdb.user:aiocouch_test_user")
     doc["name"] = "aiocouch_test_user"
     doc["password"] = "aiocouch_test_user"
-    doc["roles"] = []
+    doc["roles"] = ["aiocouch_test_role"]
     doc["type"] = "user"
 
     await doc.save()
