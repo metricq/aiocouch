@@ -31,7 +31,7 @@
 from .bulk import BulkOperation
 from .document import Document
 from .design_document import DesignDocument
-from .exception import ConflictError
+from .exception import ConflictError, NotFoundError
 from .remote import RemoteDatabase
 from .view import AllDocsView, View
 
@@ -47,10 +47,13 @@ class Database(RemoteDatabase):
     async def create(self, id, exists_ok=False):
         doc = Document(self, id)
 
-        if await doc._exists():
-            if exists_ok:
+        if exists_ok:
+            try:
                 await doc.fetch(discard_changes=True)
-            else:
+            except NotFoundError:
+                pass
+        else:
+            if await doc._exists():
                 raise ConflictError(
                     f"The document '{id}' does already exist in the database '{self.id}'"
                 )
