@@ -132,48 +132,86 @@ class SecurityDocument(Document):
 
     async def fetch(self, discard_changes=False):
         await super().fetch(discard_changes)
-        self.setdefault("members", {"names": [], "roles": []})
-        self.setdefault("admins", {"names": [], "roles": []})
 
     @property
     def members(self):
-        return self["members"]["names"]
+        try:
+            return self["members"]["names"]
+        except KeyError:
+            return None
 
     @property
     def member_roles(self):
-        return self["members"]["roles"]
+        try:
+            return self["members"]["roles"]
+        except KeyError:
+            return None
 
     @property
     def admins(self):
-        return self["admins"]["names"]
+        try:
+            return self["admins"]["names"]
+        except KeyError:
+            return None
 
     @property
     def admin_roles(self):
-        return self["admins"]["roles"]
+        try:
+            return self["admins"]["roles"]
+        except KeyError:
+            return None
 
     def add_member(self, member):
+        self.setdefault("members", {"names": [], "roles": []})
         if member not in self["members"]["names"]:
             self["members"]["names"].append(member)
 
+    def add_member_role(self, role):
+        self.setdefault("members", {"names": [], "roles": []})
+        if role not in self["members"]["roles"]:
+            self["members"]["roles"].append(role)
+
     def remove_member(self, member):
-        if member in self["members"]["names"]:
+        try:
             self["members"]["names"].remove(member)
-        else:
+        except (ValueError, KeyError) as e:
             raise KeyError(
                 f"The user '{member}' isn't a member of the database '{self._database.id}'"
-            )
+            ) from e
+
+    def remove_member_role(self, role):
+        try:
+            self["members"]["roles"].remove(role)
+        except (ValueError, KeyError) as e:
+            raise KeyError(
+                f"The user '{role}' isn't a member role of the database '{self._database.id}'"
+            ) from e
 
     def add_admin(self, admin):
+        self.setdefault("admins", {"names": [], "roles": []})
         if admin not in self["admins"]["names"]:
             self["admins"]["names"].append(admin)
 
+    def add_admin_role(self, role):
+        self.setdefault("admins", {"names": [], "roles": []})
+        if role not in self["admins"]["roles"]:
+            self["admins"]["roles"].append(role)
+
     def remove_admin(self, admin):
-        if admin in self["admins"]["names"]:
+        try:
             self["admins"]["names"].remove(admin)
-        else:
+        except (ValueError, KeyError) as e:
             raise KeyError(
                 f"The user '{admin}' isn't an admin of the database '{self._database.id}'"
-            )
+            ) from e
+
+    def remove_admin_role(self, role):
+        try:
+            self["admins"]["roles"].remove(role)
+        except (ValueError, KeyError) as e:
+            raise KeyError(
+                f"The user '{role}' isn't an admin role of the database '{self._database.id}'"
+            ) from e
 
     @raises(500, "You are not a database or server admin", ForbiddenError)
     async def save(self):

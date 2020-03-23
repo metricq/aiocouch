@@ -348,3 +348,11 @@ async def test_security_remove_admin(database):
     sec = await database.security()
     with pytest.raises(KeyError):
         sec.remove_admin("foobert")
+
+
+async def test_security_stays_empty(database):
+    sec = await database.security()
+    await sec.save()
+
+    sec2 = await database.security()
+    assert sec2._data == {}
