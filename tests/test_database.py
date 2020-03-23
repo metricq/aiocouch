@@ -299,11 +299,11 @@ async def test_set_invalid_design_doc_key(filled_database_with_view):
 async def test_get_security(database):
     sec = await database.security()
 
-    assert len(sec.members) == 0
-    assert len(sec.admins) == 0
+    assert sec.members is None
+    assert sec.admins is None
 
-    assert len(sec.member_roles) == 0
-    assert len(sec.admin_roles) == 0
+    assert sec.member_roles is None
+    assert sec.admin_roles is None
 
 
 async def test_security_add_members(database):
