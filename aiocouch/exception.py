@@ -12,6 +12,10 @@ class UnauthorizedError(PermissionError):
     pass
 
 
+class ForbiddenError(PermissionError):
+    pass
+
+
 class NotFoundError(KeyError):
     pass
 
@@ -38,6 +42,8 @@ def raise_for_endpoint(endpoint, message, exception, exception_type=None):
             exception_type = BadRequestError
         elif exception.status == 401:
             exception_type = UnauthorizedError
+        elif exception.status == 403:
+            exception_type = ForbiddenError
         elif exception.status == 404:
             exception_type = NotFoundError
         elif exception.status == 409:

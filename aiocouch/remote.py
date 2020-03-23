@@ -122,6 +122,7 @@ class RemoteDatabase(object):
         return f"/{_quote_id(self.id)}"
 
     @raises(401, "Invalid credentials")
+    @raises(403, "Read permission required")
     async def _exists(self):
         try:
             await self._remote._head(self.endpoint)
@@ -133,6 +134,7 @@ class RemoteDatabase(object):
                 raise e
 
     @raises(401, "Invalid credentials")
+    @raises(403, "Read permission required")
     @raises(404, "Requested database not found ({id})")
     async def _get(self):
         return await self._remote._get(self.endpoint)
@@ -151,6 +153,7 @@ class RemoteDatabase(object):
 
     @raises(400, "The request provided invalid JSON data or invalid query parameter")
     @raises(401, "Read permission required")
+    @raises(403, "Read permission required")
     @raises(404, "Invalid database name")
     @raises(415, "Bad Content-Type value")
     async def _bulk_get(self, docs, **params):
@@ -160,6 +163,7 @@ class RemoteDatabase(object):
 
     @raises(400, "The request provided invalid JSON data")
     @raises(401, "Invalid credentials")
+    @raises(403, "Write permission required")
     @raises(417, "At least one document was rejected by the validation function")
     async def _bulk_docs(self, docs, **data):
         data["docs"] = docs
@@ -167,16 +171,19 @@ class RemoteDatabase(object):
 
     @raises(400, "Invalid request")
     @raises(401, "Read privilege required for document '{id}'")
+    @raises(403, "Read permission required")
     @raises(500, "Query execution failed", RuntimeError)
     async def _find(self, selector, **data):
         data["selector"] = selector
         return await self._remote._post(f"{self.endpoint}/_find", data)
 
     @raises(401, "Invalid credentials")
+    @raises(403, "Permission required")
     async def _get_security(self):
         return await self._remote._get(f"{self.endpoint}/_security")
 
     @raises(401, "Invalid credentials")
+    @raises(403, "Permission required")
     async def _put_security(self, doc):
         return await self._remote._put(f"{self.endpoint}/_security", doc)
 
@@ -191,6 +198,7 @@ class RemoteDocument(object):
         return f"{self._database.endpoint}/{_quote_id(self.id)}"
 
     @raises(401, "Read privilege required for document '{id}'")
+    @raises(403, "Read privilege required for document '{id}'")
     async def _exists(self):
         try:
             await self._database._remote._head(self.endpoint)
@@ -203,12 +211,14 @@ class RemoteDocument(object):
 
     @raises(400, "The format of the request or revision was invalid")
     @raises(401, "Read privilege required for document '{id}'")
+    @raises(403, "Read privilege required for document '{id}'")
     @raises(404, "Document {id} was not found")
     async def _get(self, **params):
         return await self._database._remote._get(self.endpoint, params)
 
     @raises(400, "The format of the request or revision was invalid")
     @raises(401, "Write privilege required for document '{id}'")
+    @raises(403, "Write privilege required for document '{id}'")
     @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
     @raises(
         409,
@@ -220,6 +230,7 @@ class RemoteDocument(object):
 
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Write privilege required for document '{id}'")
+    @raises(403, "Write privilege required for document '{id}'")
     @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
     @raises(
         409, "Specified revision ({rev}) is not the latest for target document '{id}'"
@@ -230,6 +241,7 @@ class RemoteDocument(object):
 
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Read or write privileges required")
+    @raises(403, "Read or write privileges required")
     @raises(
         404, "Specified database, document ID or revision doesn’t exists ({endpoint})"
     )
@@ -259,12 +271,14 @@ class RemoteView(object):
 
     @raises(400, "Invalid request")
     @raises(401, "Read privileges required")
+    @raises(403, "Read privileges required")
     @raises(404, "Specified database, design document or view is missing")
     async def _get(self, **params):
         return await self._database._remote._get(self.endpoint, params)
 
     @raises(400, "Invalid request")
-    @raises(401, "Read privileges required")
+    @raises(401, "Write privileges required")
+    @raises(403, "Write privileges required")
     @raises(404, "Specified database, design document or view is missing")
     async def _post(self, keys, **params):
         return await self._database._remote._post(self.endpoint, {"keys": keys}, params)
