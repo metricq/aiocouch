@@ -14,6 +14,7 @@ __all__ = [
     "BadRequestError",
     "ConflictError",
     "UnauthorizedError",
+    "ForbiddenError",
     "NotFoundError",
     "ExpectationFailedError",
     "PreconditionFailedError",
