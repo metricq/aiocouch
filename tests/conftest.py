@@ -52,7 +52,7 @@ async def couchdb():
 
 
 @pytest.fixture
-async def couchdb_user(couchdb_user_account):
+async def couchdb_with_user_access(couchdb_user_account):
     from aiocouch import CouchDB
     import os
 

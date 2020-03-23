@@ -29,7 +29,7 @@ async def test_session(event_loop, couchdb):
     assert user == response["userCtx"]["name"]
 
 
-async def test_cookie_authentication(event_loop, couchdb_user):
+async def test_cookie_authentication(event_loop, couchdb_with_user_access):
     from aiocouch import CouchDB
 
     import aiohttp
