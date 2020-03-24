@@ -162,14 +162,16 @@ class SecurityDocument(Document):
             return None
 
     def add_member(self, member):
-        self.setdefault("members", {"names": [], "roles": []})
-        if member not in self["members"]["names"]:
-            self["members"]["names"].append(member)
+        members = self.setdefault("members", {})
+        names = members.setdefault("names", [])
+        if member not in names:
+            names.append(member)
 
     def add_member_role(self, role):
-        self.setdefault("members", {"names": [], "roles": []})
-        if role not in self["members"]["roles"]:
-            self["members"]["roles"].append(role)
+        members = self.setdefault("members", {})
+        roles = members.setdefault("roles", [])
+        if role not in roles:
+            roles.append(role)
 
     def remove_member(self, member):
         try:
@@ -188,14 +190,16 @@ class SecurityDocument(Document):
             ) from e
 
     def add_admin(self, admin):
-        self.setdefault("admins", {"names": [], "roles": []})
-        if admin not in self["admins"]["names"]:
-            self["admins"]["names"].append(admin)
+        admins = self.setdefault("admins", {})
+        names = admins.setdefault("names", [])
+        if admin not in names:
+            names.append(admin)
 
     def add_admin_role(self, role):
-        self.setdefault("admins", {"names": [], "roles": []})
-        if role not in self["admins"]["roles"]:
-            self["admins"]["roles"].append(role)
+        admins = self.setdefault("admins", {})
+        roles = admins.setdefault("roles", [])
+        if role not in roles:
+            roles.append(role)
 
     def remove_admin(self, admin):
         try:

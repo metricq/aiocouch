@@ -302,8 +302,8 @@ async def test_get_security(database):
     assert sec.members is None
     assert sec.admins is None
 
-    assert sec.member_roles is None
-    assert sec.admin_roles is None
+    assert sec.member_roles is None or sec.member_roles == ["_admin"]
+    assert sec.admin_roles is None or sec.admin_roles == ["_admin"]
 
 
 async def test_security_add_members(database):
@@ -352,7 +352,8 @@ async def test_security_remove_admin(database):
 
 async def test_security_stays_empty(database):
     sec = await database.security()
+    old_data = sec._data
     await sec.save()
 
     sec2 = await database.security()
-    assert sec2._data == {}
+    assert sec2._data == old_data

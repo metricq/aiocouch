@@ -7,6 +7,10 @@ pytestmark = pytest.mark.asyncio
 async def test_security_missing_privileges(database, couchdb_with_user_access):
     from aiocouch import ForbiddenError
 
+    sec2 = await database.security()
+    sec2.add_member("aiocouch_test_user")
+    await sec2.save()
+
     db = await couchdb_with_user_access["aiocouch_test_fixture_database"]
     sec = await db.security()
 
@@ -15,7 +19,6 @@ async def test_security_missing_privileges(database, couchdb_with_user_access):
     with pytest.raises(ForbiddenError):
         await sec.save()
 
-    sec2 = await database.security()
     sec2.add_admin("aiocouch_test_user")
     await sec2.save()
 
