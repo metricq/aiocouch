@@ -17,5 +17,5 @@ Run `pip install .` within the root directory.
 Or shorter for CI:
 
 ```
-COUCHDB_HOST=localhost:5984 COUCHDB_USER=admin COUCHDB_PASS=admin python setup.py test
+COUCHDB_HOST=http://localhost:5984 COUCHDB_USER=admin COUCHDB_PASS=admin python setup.py test
 ```
