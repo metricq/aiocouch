@@ -82,6 +82,9 @@ class Document(RemoteDocument):
     def exists(self):
         return "_rev" in self and "_deleted" not in self
 
+    async def fetch_info(self):
+        return await self._fetch_info()
+
     def _update_rev_after_save(self, data):
         with suppress(KeyError):
             self._data["_rev"] = data["rev"]

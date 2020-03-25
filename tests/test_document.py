@@ -1,4 +1,4 @@
-from aiocouch import ConflictError
+from aiocouch import ConflictError, NotFoundError
 
 import pytest
 
@@ -115,6 +115,29 @@ async def test_copy(filled_database):
         if key == "_id":
             continue
         assert foo_copy[key] == foo[key]
+
+
+async def test_get_info(database):
+    doc = await database.create("foo42")
+    await doc.save()
+
+    info = await doc.fetch_info()
+    assert info["ok"]
+    assert info["id"] == "foo42"
+    assert info["rev"].startswith("1-")
+
+    doc["bar"] = True
+    await doc.save()
+
+    info = await doc.fetch_info()
+    assert info["ok"]
+    assert info["id"] == "foo42"
+    assert info["rev"].startswith("2-")
+
+    await doc.delete()
+
+    with pytest.raises(NotFoundError):
+        await doc.fetch_info()
 
 
 async def test_doc_update(doc):
