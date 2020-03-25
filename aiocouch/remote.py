@@ -77,17 +77,22 @@ class RemoteServer(object):
     async def _delete(self, path, params=None):
         return await self._request("DELETE", path, params=params)
 
-    async def _head(self, path, params=None):
-        return await self._request("HEAD", path, params=params)
+    async def _head(self, path, params=None, return_response=False):
+        return await self._request(
+            "HEAD", path, params=params, return_response=return_response
+        )
 
-    async def _request(self, method, path, params, **kwargs):
+    async def _request(self, method, path, params, return_response=False, **kwargs):
         kwargs["params"] = _stringify_params(params)
 
         async with self._http_session.request(
             method, url=f"{self._server}{path}", **kwargs
         ) as resp:
             resp.raise_for_status()
-            return await resp.json()
+            if return_response:
+                return resp, await resp.read()
+            else:
+                return await resp.json()
 
     @raises(401, "Invalid credentials")
     async def _all_dbs(self, **params):
@@ -199,9 +204,17 @@ class RemoteDocument(object):
 
     @raises(401, "Read privilege required for document '{id}'")
     @raises(403, "Read privilege required for document '{id}'")
+    async def _head(self):
+        return await self._database._remote._head(self.endpoint, return_response=True)
+
+    @raises(404, "Document {id} was not found")
+    async def _fetch_info(self):
+        resp, data = await self._head()
+        return {"ok": True, "id": self._data["_id"], "rev": resp.headers["Etag"][1:-1]}
+
     async def _exists(self):
         try:
-            await self._database._remote._head(self.endpoint)
+            await self._head()
             return True
         except aiohttp.ClientResponseError as e:
             if e.status == 404:
