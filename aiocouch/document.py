@@ -30,6 +30,7 @@
 
 from .remote import RemoteDocument
 from .exception import ConflictError, ForbiddenError, raises
+from .attachment import Attachment
 
 from contextlib import suppress
 import json
@@ -123,6 +124,11 @@ class Document(RemoteDocument):
 
     def setdefault(self, key, default=None):
         return self._data.setdefault(key, default)
+
+    def attachment(self, id):
+        # Return the attachment object, but don't automatically fetch data over the network
+        # (attachments can be large), let the user call .fetch() or .save().
+        return Attachment(self, id)
 
     def __repr__(self):
         return json.dumps(self._data, indent=2)

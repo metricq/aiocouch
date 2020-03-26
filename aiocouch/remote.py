@@ -65,11 +65,19 @@ class RemoteServer(object):
         self._http_session = aiohttp.ClientSession(headers=headers, auth=auth, **kwargs)
         self._databases = {}
 
-    async def _get(self, path, params=None):
-        return await self._request("GET", path, params=params)
+    async def _get(self, path, params=None, return_response=False):
+        return await self._request(
+            "GET", path, params=params, return_response=return_response
+        )
 
-    async def _put(self, path, data=None, params=None):
-        return await self._request("PUT", path, json=data, params=params)
+    async def _put(self, path, data=None, params=None, content_type=None):
+        if content_type is not None:
+            json, data, headers = None, data, {"Content-Type": content_type}
+        else:
+            json, data, headers = data, None, None
+        return await self._request(
+            "PUT", path, json=json, data=data, params=params, headers=headers
+        )
 
     async def _post(self, path, data, params=None):
         return await self._request("POST", path, json=data, params=params)
@@ -267,6 +275,71 @@ class RemoteDocument(object):
         return await self._database._remote._request(
             "COPY", self.endpoint, params=params, headers={"Destination": destination}
         )
+
+
+class RemoteAttachment(object):
+    def __init__(self, document, id):
+        self._document = document
+        self.id = id
+        self.content_type = None
+
+    @property
+    def endpoint(self):
+        return f"{self._document.endpoint}/{_quote_id(self.id)}"
+
+    @raises(401, "Read privilege required for document '{document_id}'")
+    @raises(403, "Read privilege required for document '{document_id}'")
+    async def _exists(self):
+        try:
+            resp, data = await self._document._database._remote._head(
+                self.endpoint, return_response=True
+            )
+            self.content_type = resp.headers["Content-Type"]
+            return True
+        except aiohttp.ClientResponseError as e:
+            if e.status == 404:
+                return False
+            else:
+                raise e
+
+    @raises(400, "Invalid request parameters")
+    @raises(401, "Read privilege required for document '{document_id}'")
+    @raises(403, "Read privilege required for document '{document_id}'")
+    @raises(404, "Document '{document_id}' or attachment '{id}' doesn’t exists")
+    async def _get(self, **params):
+        resp, data = await self._document._database._remote._get(
+            self.endpoint, params, return_response=True
+        )
+        self.content_type = resp.headers["Content-Type"]
+        return data
+
+    @raises(400, "Invalid request body or parameters")
+    @raises(401, "Write privilege required for document '{document_id}'")
+    @raises(403, "Write privilege required for document '{document_id}'")
+    @raises(404, "Document '{document_id}' doesn’t exists")
+    @raises(
+        409, "Specified revision {document_rev} is not the latest for target document"
+    )
+    async def _put(self, rev, data, content_type, **params):
+        params["rev"] = rev
+        data = await self._document._database._remote._put(
+            self.endpoint, data, params, content_type
+        )
+        self.content_type = content_type
+        return data
+
+    @raises(400, "Invalid request body or parameters")
+    @raises(401, "Write privilege required for document '{document_id}'")
+    @raises(403, "Write privilege required for document '{document_id}'")
+    @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
+    @raises(
+        409, "Specified revision {document_rev} is not the latest for target document"
+    )
+    async def _delete(self, rev, **params):
+        params["rev"] = rev
+        data = await self._document._database._remote._delete(self.endpoint, params)
+        self.content_type = None
+        return data
 
 
 class RemoteView(object):
