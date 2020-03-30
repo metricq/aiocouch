@@ -58,6 +58,19 @@ async def test_conflict(filled_database):
         await doc2.save()
 
 
+async def test_conflict_without_rev(database):
+    doc1 = await database.create("fou")
+    doc2 = await database.create("fou")
+
+    doc1["blub"] = "new"
+    await doc1.save()
+
+    doc2["blub"] = "bar"
+
+    with pytest.raises(ConflictError):
+        await doc2.save()
+
+
 async def test_update(filled_database):
     doc = await filled_database["foo"]
 

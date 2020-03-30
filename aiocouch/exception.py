@@ -62,13 +62,13 @@ def raise_for_endpoint(endpoint, message, exception, exception_type=None):
 
     message_input = {}
 
-    with suppress(KeyError, AttributeError):
+    with suppress(AttributeError):
         message_input["id"] = endpoint.id
         message_input["endpoint"] = endpoint.endpoint
-        message_input["rev"] = endpoint._data["_rev"]
-    with suppress(KeyError, AttributeError):
+        message_input["rev"] = endpoint._data.get("_rev")
+    with suppress(AttributeError):
         message_input["document_id"] = endpoint._document.id
-        message_input["document_rev"] = endpoint._document._data["_rev"]
+        message_input["document_rev"] = endpoint._document._data.get("_rev")
 
     raise exception_type(message.format(**message_input)) from exception
 
