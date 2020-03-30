@@ -7,7 +7,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_server_version(event_loop, couchdb):
-    response = await couchdb._server._get("/")
+    response = await couchdb.info()
 
     from packaging import version
 
@@ -15,7 +15,7 @@ async def test_server_version(event_loop, couchdb):
 
 
 async def test_session(event_loop, couchdb):
-    response = await couchdb._server._get("/_session")
+    headers, response = await couchdb._server._get("/_session")
 
     assert "ok" in response
     assert "userCtx" in response
@@ -55,7 +55,7 @@ async def test_cookie_authentication(event_loop, couchdb_with_user_access):
     async with CouchDB(hostname, cookie=cookie) as couchdb:
         await couchdb.check_credentials()
 
-        response = await couchdb._server._get("/_session")
+        headers, response = await couchdb._server._get("/_session")
 
         assert user == response["userCtx"]["name"]
 

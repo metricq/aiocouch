@@ -7,12 +7,10 @@ pytestmark = pytest.mark.asyncio
 
 async def test_list_databases(event_loop, couchdb):
     dbs = await couchdb.keys()
-
     assert "aiocouch_test_fixture_database" not in dbs
 
 
 async def test_list_database(event_loop, couchdb, database):
-
     dbs = await couchdb.keys()
     assert "aiocouch_test_fixture_database" in dbs
 
