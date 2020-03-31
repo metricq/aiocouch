@@ -195,7 +195,7 @@ class SecurityDocument(Document):
             self["members"]["roles"].remove(role)
         except (ValueError, KeyError) as e:
             raise KeyError(
-                f"The user '{role}' isn't a member role of the database '{self._database.id}'"
+                f"The role '{role}' isn't a member role of the database '{self._database.id}'"
             ) from e
 
     def add_admin(self, admin):
@@ -223,7 +223,7 @@ class SecurityDocument(Document):
             self["admins"]["roles"].remove(role)
         except (ValueError, KeyError) as e:
             raise KeyError(
-                f"The user '{role}' isn't an admin role of the database '{self._database.id}'"
+                f"The role '{role}' isn't an admin role of the database '{self._database.id}'"
             ) from e
 
     @raises(500, "You are not a database or server admin", ForbiddenError)
