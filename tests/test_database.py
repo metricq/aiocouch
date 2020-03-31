@@ -44,6 +44,14 @@ async def test_create_for_existing_exists_true(filled_database):
     assert doc._dirty_cache is False
 
 
+async def test_create_for_non_existing_exists_true(database):
+    doc = await database.create("foo", exists_ok=True)
+
+    assert doc["_id"] == doc.id == "foo"
+    assert "_rev" not in doc
+    assert doc._dirty_cache is True
+
+
 async def test_get_for_existing(filled_database):
     doc = await filled_database.get("foo")
 
