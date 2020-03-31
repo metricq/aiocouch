@@ -161,6 +161,65 @@ async def test_update_docs_for_deleted(filled_database):
     assert doc["llama"] == "awesome"
 
 
+async def test_create_docs_with_ids(database):
+    async with database.create_docs(["foo", "baz"]) as docs:
+        pass
+
+    assert len(docs.status) == 2
+
+    keys = [key async for key in database.akeys()]
+
+    assert len(keys) == 2
+    assert sorted(keys) == ["baz", "foo"]
+
+
+async def test_create_docs_with_create(database):
+    async with database.create_docs() as docs:
+        foo = docs.create("foo")
+        foo["counter"] = 42
+        docs.create("baz")
+
+    assert len(docs.status) == 2
+
+    keys = [key async for key in database.akeys()]
+
+    assert len(keys) == 2
+    assert sorted(keys) == ["baz", "foo"]
+
+    foo = await database["foo"]
+    assert "counter" in foo
+    assert foo["counter"] == 42
+
+
+async def test_create_docs_with_create_duplicate(database):
+    async with database.create_docs() as docs:
+        docs.create("foo")
+        docs.create("foo")
+
+    assert len(docs.status) == 2
+
+    assert "ok" in docs.status[0]
+    assert "error" in docs.status[1]
+    assert docs.status[1]["error"] == "conflict"
+
+    keys = [key async for key in database.akeys()]
+
+    assert len(keys) == 1
+    assert sorted(keys) == ["foo"]
+
+
+async def test_create_docs_mixed(database):
+    async with database.create_docs(["foo"]) as docs:
+        docs.create("baz")
+
+    assert len(docs.status) == 2
+
+    keys = [key async for key in database.akeys()]
+
+    assert len(keys) == 2
+    assert sorted(keys) == ["baz", "foo"]
+
+
 async def test_docs_on_empty(database):
     all_docs = [doc async for doc in database.docs([])]
 

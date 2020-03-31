@@ -28,18 +28,17 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from .document import Document
 
-class BulkOperation(object):
-    def __init__(self, database, ids, create):
+
+class BulkStoreOperation(object):
+    def __init__(self, database, ids=[]):
         self._database = database
         self._ids = ids
-        self._create = create
         self.status = None
 
     async def __aenter__(self):
-        self._docs = [
-            doc async for doc in self._database.docs(self._ids, create=self._create)
-        ]
+        self._docs = [Document(self._database, id) for id in self._ids]
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
@@ -54,3 +53,21 @@ class BulkOperation(object):
     async def __aiter__(self):
         for doc in self._docs:
             yield doc
+
+    def create(self, id, *args, **kwargs):
+        doc = Document(self._database, id, *args, **kwargs)
+        self._docs.append(doc)
+
+        return doc
+
+
+class BulkOperation(BulkStoreOperation):
+    def __init__(self, database, ids, create):
+        super().__init__(database, ids=ids)
+        self._create = create
+
+    async def __aenter__(self):
+        self._docs = [
+            doc async for doc in self._database.docs(self._ids, create=self._create)
+        ]
+        return self
