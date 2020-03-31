@@ -30,4 +30,8 @@ setup(
         "examples": ["aiomonitor", "click", "click-log", "click-completion"],
         "tests": test_deps,
     },
+    project_urls={
+        "Source": "https://github.com/metricq/aiocouch",
+        "Bug Tracker": "https://github.com/metricq/aiocouch/issues",
+    },
 )
