@@ -134,7 +134,7 @@ async def test_get_info(database):
     doc = await database.create("foo42")
     await doc.save()
 
-    info = await doc.fetch_info()
+    info = await doc.info()
     assert info["ok"]
     assert info["id"] == "foo42"
     assert info["rev"].startswith("1-")
@@ -142,7 +142,7 @@ async def test_get_info(database):
     doc["bar"] = True
     await doc.save()
 
-    info = await doc.fetch_info()
+    info = await doc.info()
     assert info["ok"]
     assert info["id"] == "foo42"
     assert info["rev"].startswith("2-")
@@ -150,7 +150,7 @@ async def test_get_info(database):
     await doc.delete()
 
     with pytest.raises(NotFoundError):
-        await doc.fetch_info()
+        await doc.info()
 
 
 async def test_doc_update(doc):

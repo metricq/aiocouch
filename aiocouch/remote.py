@@ -229,7 +229,7 @@ class RemoteDocument(object):
     @raises(401, "Read privilege required for document '{id}'")
     @raises(403, "Read privilege required for document '{id}'")
     @raises(404, "Document {id} was not found")
-    async def _fetch_info(self):
+    async def _info(self):
         headers, _ = await self._database._remote._head(self.endpoint)
         return {"ok": True, "id": self._data["_id"], "rev": headers["Etag"][1:-1]}
 

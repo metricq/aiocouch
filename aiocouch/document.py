@@ -32,6 +32,8 @@ from .remote import RemoteDocument
 from .exception import ConflictError, ForbiddenError, raises
 from .attachment import Attachment
 
+from deprecated import deprecated
+
 from contextlib import suppress
 import json
 
@@ -83,8 +85,14 @@ class Document(RemoteDocument):
     def exists(self):
         return "_rev" in self and "_deleted" not in self
 
+    @deprecated(
+        version="1.1.0", reason="This method is a misnomer. Use info() instead."
+    )
     async def fetch_info(self):
-        return await self._fetch_info()
+        return await self._info()
+
+    async def info(self):
+        return await self._info()
 
     def _update_rev_after_save(self, data):
         with suppress(KeyError):
