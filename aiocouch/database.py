@@ -28,7 +28,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .bulk import BulkOperation
+from .bulk import BulkOperation, BulkStoreOperation
 from .document import Document, SecurityDocument
 from .design_document import DesignDocument
 from .exception import ConflictError, NotFoundError
@@ -115,6 +115,9 @@ class Database(RemoteDatabase):
 
     def update_docs(self, ids, create=False):
         return BulkOperation(self, ids, create)
+
+    def create_docs(self, ids=[]):
+        return BulkStoreOperation(self, ids)
 
     async def __getitem__(self, id):
         return await self.get(id)
