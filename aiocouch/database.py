@@ -46,8 +46,8 @@ class Database(RemoteDatabase):
         async for key in self.all_docs.ids(**params):
             yield key
 
-    async def create(self, id, exists_ok=False):
-        doc = Document(self, id)
+    async def create(self, id, data=None, exists_ok=False):
+        doc = Document(self, id, data=data)
 
         if exists_ok:
             with suppress(NotFoundError):
@@ -123,14 +123,12 @@ class Database(RemoteDatabase):
         return await self.get(id)
 
     async def get(self, id, default=None):
-        doc = Document(self, id)
+        doc = Document(self, id, data=default)
 
         try:
             await doc.fetch(discard_changes=True)
         except NotFoundError as e:
-            if default is not None:
-                doc.update(default)
-            else:
+            if default is None:
                 raise e
 
         return doc

@@ -16,6 +16,20 @@ async def test_create_document(database):
     assert doc.id in [key async for key in database.akeys()]
 
 
+async def test_create_document_with_data(database):
+    doc = await database.create("test_document", data={"foo": 1234})
+
+    assert doc["foo"] == 1234
+
+    # doc not yet saved, so it shouldn't be listed in the database
+    assert doc.id not in [key async for key in database.akeys()]
+
+    await doc.save()
+
+    # doc was saved, so it should be listed in the database
+    assert doc.id in [key async for key in database.akeys()]
+
+
 async def test_getitem_for_existing(filled_database):
     doc = await filled_database["foo"]
 
@@ -48,6 +62,27 @@ async def test_create_for_non_existing_exists_true(database):
     doc = await database.create("foo", exists_ok=True)
 
     assert doc["_id"] == doc.id == "foo"
+    assert "_rev" not in doc
+    assert doc._dirty_cache is True
+
+
+async def test_create_for_existing_exists_true_data(filled_database):
+    doc = await filled_database.create(
+        "foo", exists_ok=True, data={"bar": False, "fox": "red"}
+    )
+
+    assert doc["bar"] is True
+    assert "fox" not in doc
+    assert doc["_id"] == doc.id == "foo"
+    assert doc["_rev"].startswith("1-")
+    assert doc._dirty_cache is False
+
+
+async def test_create_for_non_existing_exists_true_data(database):
+    doc = await database.create("foo", exists_ok=True, data={"foo": 1234})
+
+    assert doc["_id"] == doc.id == "foo"
+    assert doc["foo"] == 1234
     assert "_rev" not in doc
     assert doc._dirty_cache is True
 
@@ -175,8 +210,7 @@ async def test_create_docs_with_ids(database):
 
 async def test_create_docs_with_create(database):
     async with database.create_docs() as docs:
-        foo = docs.create("foo")
-        foo["counter"] = 42
+        docs.create("foo", data={"counter": 42})
         docs.create("baz")
 
     assert len(docs.status) == 2

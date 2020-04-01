@@ -39,9 +39,10 @@ import json
 
 
 class Document(RemoteDocument):
-    def __init__(self, database, id):
+    def __init__(self, database, id, data=None):
         super().__init__(database, id)
-        self._data = {"_id": id}
+        self._data = data if data else {}
+        self._data["_id"] = id
         self._data_hash = None
 
     def _update_hash(self):

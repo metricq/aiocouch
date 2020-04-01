@@ -54,8 +54,8 @@ class BulkStoreOperation(object):
         for doc in self._docs:
             yield doc
 
-    def create(self, id, *args, **kwargs):
-        doc = Document(self._database, id, *args, **kwargs)
+    def create(self, id, data=None):
+        doc = Document(self._database, id, data=data)
         self._docs.append(doc)
 
         return doc

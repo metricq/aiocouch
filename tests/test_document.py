@@ -6,6 +6,16 @@ import pytest
 pytestmark = pytest.mark.asyncio
 
 
+async def test_constructor(database):
+    from aiocouch.document import Document
+
+    doc = Document(database, "foo", data={"foo": 42})
+
+    assert doc.id == "foo"
+    assert doc["_id"] == "foo"
+    assert doc["foo"] == 42
+
+
 async def test_save(database):
     doc = await database.create("foo42")
     doc["bar"] = True
