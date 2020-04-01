@@ -35,6 +35,8 @@ from .exception import ConflictError, NotFoundError
 from .remote import RemoteDatabase
 from .view import AllDocsView, View
 
+from contextlib import suppress
+
 
 class Database(RemoteDatabase):
     def __init__(self, couchdb, id):
@@ -48,10 +50,8 @@ class Database(RemoteDatabase):
         doc = Document(self, id)
 
         if exists_ok:
-            try:
+            with suppress(NotFoundError):
                 await doc.fetch(discard_changes=True)
-            except NotFoundError:
-                pass
         else:
             if await doc._exists():
                 raise ConflictError(
