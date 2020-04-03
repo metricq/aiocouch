@@ -58,6 +58,32 @@ async def test_update_docs_for_deleted(filled_database):
     assert doc["llama"] == "awesome"
 
 
+async def test_update_docs_for_errored(filled_database):
+    doc = await filled_database["foo"]
+    doc["something"] = 42
+    async with filled_database.update_docs(["foo", "baz"]) as docs:
+        # provoke a conflict for document foo
+        await doc.save()
+
+        async for doc in docs:
+            doc["thing"] = 42
+
+    assert docs.status is not None
+    assert len(docs.status) == 2
+
+    assert len(docs.ok) == 1
+    doc_ok = docs.ok[0]
+    assert doc_ok.id == "baz"
+    assert doc_ok["thing"] == 42
+    assert doc_ok["_rev"].startswith("2-")
+
+    assert len(docs.error) == 1
+    doc_err = docs.error[0]
+    assert doc_err.id == "foo"
+    assert doc_err["_rev"].startswith("1-")
+    assert "something" not in doc_err
+
+
 async def test_create_docs_with_ids(database):
     async with database.create_docs(["foo", "baz"]) as docs:
         pass

@@ -36,6 +36,8 @@ class BulkStoreOperation(object):
         self._database = database
         self._ids = ids
         self.status = None
+        self.ok = None
+        self.error = None
 
     async def __aenter__(self):
         self._docs = [Document(self._database, id) for id in self._ids]
@@ -49,6 +51,17 @@ class BulkStoreOperation(object):
             self.status = await self._database._bulk_docs(docs)
         else:
             self.status = []
+
+        self.ok = []
+        self.error = []
+
+        for status, doc in zip(self.status, self._docs):
+            assert status["id"] == doc.id
+            if "ok" in status:
+                doc._update_rev_after_save(status)
+                self.ok.append(doc)
+            else:
+                self.error.append(doc)
 
     async def __aiter__(self):
         for doc in self._docs:
