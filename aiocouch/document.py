@@ -42,6 +42,8 @@ class Document(RemoteDocument):
     def __init__(self, database, id, data=None):
         super().__init__(database, id)
         self._data = data if data else {}
+        if not isinstance(self._data, dict):
+            raise TypeError("data parameter must be a dict object")
         self._data["_id"] = id
         self._data_hash = None
 

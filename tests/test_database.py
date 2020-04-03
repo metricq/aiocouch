@@ -50,7 +50,7 @@ async def test_create_for_existing(filled_database):
 
 
 async def test_create_for_existing_exists_true(filled_database):
-    doc = await filled_database.create("foo", exists_ok=True)
+    doc = await filled_database.create("foo", True)
 
     assert doc["bar"] is True
     assert doc["_id"] == doc.id == "foo"

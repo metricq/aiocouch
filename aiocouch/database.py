@@ -46,7 +46,7 @@ class Database(RemoteDatabase):
         async for key in self.all_docs.ids(**params):
             yield key
 
-    async def create(self, id, data=None, exists_ok=False):
+    async def create(self, id, exists_ok=False, data=None):
         doc = Document(self, id, data=data)
 
         if exists_ok:
