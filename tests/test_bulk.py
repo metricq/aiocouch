@@ -4,6 +4,15 @@ import pytest
 pytestmark = pytest.mark.asyncio
 
 
+async def test_update_docs_on_empty(database):
+    async with database.update_docs([]) as bulk:
+        pass
+
+    assert bulk._docs == []
+    keys = [key async for key in database.akeys()]
+    assert len(keys) == 0
+
+
 async def test_update_docs_creating(database):
     async with database.update_docs(["foobar"], create=True):
         pass
