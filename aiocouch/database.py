@@ -64,6 +64,8 @@ class Database(RemoteDatabase):
         await self._delete()
 
     async def docs(self, ids=None, create=False, prefix=None, **params):
+        if ids is not None and len(ids) == 0:
+            return
         async for doc in self.all_docs.docs(ids, create, prefix, **params):
             yield doc
 
