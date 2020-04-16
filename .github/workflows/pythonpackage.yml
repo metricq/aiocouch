@@ -38,17 +38,13 @@ jobs:
         args: ". --check"
     - name: Test with pytest
       run: |
-        pytest --cov=aiocouch --cov-report=xml
+        python -m pytest --cov-report xml --cov aiocouch
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
-        flags: unittests
-        name: Python ${{ matrix.python-version }}
-        fail_ci_if_error: true
+
   doc:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v1
     - uses: ammaraskar/sphinx-action@master
