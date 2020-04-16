@@ -28,7 +28,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .exception import ConflictError, NotFoundError
+from .exception import PreconditionFailedError, NotFoundError
 from .database import Database
 from .remote import RemoteServer
 
@@ -57,7 +57,7 @@ class CouchDB(object):
         elif exists_ok:
             return db
         else:
-            raise ConflictError(f"The database '{id}' does already exist.")
+            raise PreconditionFailedError(f"The database '{id}' does already exist.")
 
     async def __getitem__(self, id):
         db = Database(self, id)

@@ -28,7 +28,9 @@ async def test_create_delete_database(event_loop, couchdb):
 
 
 async def test_create_for_existing(couchdb, database):
-    with pytest.raises(KeyError):
+    from aiocouch import PreconditionFailedError
+
+    with pytest.raises(PreconditionFailedError):
         await couchdb.create(database.id)
 
 
@@ -41,7 +43,9 @@ async def test_get_for_existing(couchdb, database):
 
 
 async def test_get_for_non_existing(couchdb, database):
-    with pytest.raises(KeyError):
+    from aiocouch import NotFoundError
+
+    with pytest.raises(NotFoundError):
         await couchdb[database.id + "not_existing"]
 
 
