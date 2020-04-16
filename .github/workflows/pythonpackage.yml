@@ -41,7 +41,7 @@ jobs:
         pip install pytest
         pytest
 
-  docs:
+  doc:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
