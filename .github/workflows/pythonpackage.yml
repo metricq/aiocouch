@@ -41,6 +41,8 @@ jobs:
         python -m pytest --cov-report xml --cov aiocouch
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
+      with:
+        name: Python ${{ matrix.python-version }}
 
   doc:
     runs-on: ubuntu-latest
