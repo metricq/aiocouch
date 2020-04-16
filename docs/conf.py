@@ -33,7 +33,7 @@ with open(_changelog_path, "r") as changelog:
 # -- Project information -----------------------------------------------------
 
 project = "aiocouch"
-copyright = "2020, Mario Bielert"
+copyright = "2020, ZIH, Technische Universität Dresden"
 author = "Mario Bielert"
 
 # The short X.Y version
@@ -46,7 +46,12 @@ release = "{major}.{minor}.{patch}".format(**_version_info)
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.coverage", "sphinx_autodoc_typehints"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.coverage",
+    "sphinx_autodoc_typehints",
+    "sphinx.ext.intersphinx",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -55,6 +60,11 @@ templates_path = ["_templates"]
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+intersphinx_mapping = {
+    "aiohttp": ("https://docs.aiohttp.org/en/stable/", None),
+    "couchdb": ("https://docs.couchdb.org/en/stable/", None),
+}
 
 
 # -- Options for HTML output -------------------------------------------------

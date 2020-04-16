@@ -39,7 +39,24 @@ import json
 
 
 class Document(RemoteDocument):
-    def __init__(self, database, id, data=None):
+    """A local representation for the referenced CouchDB document
+
+    An instance of this class represents a local copy of the document data on the
+    server. This class behaves like a dict containing the document data and allows to
+    :func:`~aiocouch.document.Document.fetch` and
+    :func:`~aiocouch.document.Document.save` documents.
+
+    Constructing an instance of this class does not cause any network requests.
+
+    :ivar id: the id of the document
+
+    :param `aiocouch.database.Database` database: The database of the document
+    :param id: the id of the document
+    :param data: the inital data for the document
+
+    """
+
+    def __init__(self, database, id: str, data: dict = None):
         super().__init__(database, id)
         self._data = data if data else {}
         if not isinstance(self._data, dict):
@@ -56,45 +73,112 @@ class Document(RemoteDocument):
             json.dumps(self._data, sort_keys=True)
         )
 
-    async def fetch(self, discard_changes=False):
+    async def fetch(self, discard_changes: bool = False):
+        """Retrieves the document data from the server
+
+        Fetching the document will retrieve the data from the server using a network
+        request and update the local data.
+
+        :raises ~aiocouch.ConflictError: if the local data has changed without saving
+
+        :param discard_changes: If set to `True`, the local data object will the
+            overridden with the retrieved content. If the local data was changed, no
+            exception will be raised.
+
+        """
         if self._dirty_cache and not discard_changes:
             raise ConflictError(
-                f"Cannot fetch document '{self.id}' from server, as the local cache has unsaved changes."
+                f"Cannot fetch document '{self.id}' from server, "
+                "as the local cache has unsaved changes."
             )
         self._update_cache(await self._get())
 
     async def save(self):
+        """Saves the current state to the CouchDB server
+
+        :raises ~aiocouch.ConflictError: if the local revision is different from the
+            server. See TODO.
+
+        """
         if self._dirty_cache:
             data = await self._put(self._data)
             self._update_rev_after_save(data)
 
     async def delete(self, discard_changes=False):
+        """Deletes the document from the server
+
+        Calling this method deltes the local data and the document on the server.
+        Afterwards, the instance can be filled with new data and call :meth:`.save`
+        again.
+
+        :raises ~aiocouch.ConflictError: if the local data has changed without saving
+        :raises ~aiocouch.ConflictError: if the local revision is different from the
+            server. See TODO.
+
+        """
         if self._dirty_cache and not discard_changes:
             raise ConflictError(
-                f"Cannot delete document '{self.id}' from server, as the local cache has unsaved changes."
+                f"Cannot delete document '{self.id}' from server, as the local cache "
+                "has unsaved changes."
             )
         self._update_cache(await self._delete(rev=self["_rev"]))
 
-    async def copy(self, new_id):
+    async def copy(self, new_id: str) -> "Document":
+        """Create a copy of the document on the server
+
+        Creates a new document with the data currently stored on the server.
+
+        :param new_id: the id of the new document
+        :return: an instance for the new document after it was copied
+
+        """
         await self._copy(new_id)
 
         return await self._database[new_id]
 
     @property
-    def data(self):
+    def data(self) -> dict:
+        """Returns the local copy of the document as a dict
+
+        If the document doesn't exist on the server, this function returns ``None``.
+
+        This method does not perform a network request.
+
+        :return: Returns the data of the document or ``None``
+
+        """
         return self._data if self.exists else None
 
     @property
-    def exists(self):
+    def exists(self) -> bool:
+        """Denotes whether the document exists
+
+        A document exists, if it was :func:`~aiocouch.document.Document.fetch` ed from
+        the server and wasn't deleted on the server.
+
+        This method does not perform a network request.
+
+        :return: ``True`` if the document exists, ``False`` overwise
+
+        """
         return "_rev" in self and "_deleted" not in self
 
     @deprecated(
         version="1.1.0", reason="This method is a misnomer. Use info() instead."
     )
-    async def fetch_info(self):
+    async def fetch_info(self) -> dict:
         return await self._info()
 
-    async def info(self):
+    async def info(self) -> dict:
+        """Returns a short information about the document.
+
+        This method sends a request to the server to retrieve the current status.
+
+        :raises ~aiocouch.NotFoundError: if the document does not exist on the server
+
+        :return: A dict containing the id and revision of the document on the server
+
+        """
         return await self._info()
 
     def _update_rev_after_save(self, data):
@@ -136,9 +220,18 @@ class Document(RemoteDocument):
     def setdefault(self, key, default=None):
         return self._data.setdefault(key, default)
 
-    def attachment(self, id):
-        # Return the attachment object, but don't automatically fetch data over the network
-        # (attachments can be large), let the user call .fetch() or .save().
+    def attachment(self, id: str) -> "Attachment":
+        """Returns the attachment object
+
+        The attachment object is returned, but this method doesn't actually fetch any
+        data from the server. Use
+        :meth:`~aiocouch.attachment.Attachment.fetch()` and
+        :meth:`~aiocouch.attachment.Attachment.save()`, respectively.
+
+        :param id: the id of the attachment
+        :return: Returns the attachment object
+
+        """
         return Attachment(self, id)
 
     def __repr__(self):

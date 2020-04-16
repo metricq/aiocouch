@@ -254,8 +254,8 @@ class RemoteDocument(object):
     @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
     @raises(
         409,
-        "Document with the specified ID ({id}) already exists or specified revision {rev} "
-        "is not latest for target document",
+        "Document with the specified ID ({id}) already exists or specified revision "
+        "{rev} is not latest for target document",
     )
     async def _put(self, data, **params):
         _, json = await self._database._remote._put(self.endpoint, data, params)
@@ -281,8 +281,8 @@ class RemoteDocument(object):
     )
     @raises(
         409,
-        "Document with the specified ID already exists or specified revision is not latest for "
-        "target document",
+        "Document with the specified ID already exists or specified revision is not "
+        "latest for target document",
     )
     async def _copy(self, destination, **params):
         _, json = await self._database._remote._request(

@@ -34,6 +34,18 @@ from .remote import RemoteServer
 
 
 class CouchDB(object):
+    """CouchDB Server Connection Session
+
+    The
+
+    :param str server: URL of the CouchDB server
+    :param str user: user used for authentication
+    :param str password: password for authentication
+    :param str cookie: The session cookie used for authentication
+    :param Any kwargs: Any other kwargs are passed to :class:`aiohttp.ClientSession`
+
+    """
+
     def __init__(self, *args, **kwargs):
         self._server = RemoteServer(*args, **kwargs)
 
@@ -44,12 +56,30 @@ class CouchDB(object):
         await self.close()
 
     async def check_credentials(self):
+        """Check the provided credentials.
+
+            :raises ~aiocouch.UnauthorizedError: if provided credentials aren't valid
+
+        """
         await self._server._check_session()
 
     async def close(self):
+        """Closes the connection to the CouchDB server
+
+        """
         await self._server.close()
 
-    async def create(self, id, exists_ok=False, **kwargs):
+    async def create(self, id, exists_ok=False, **kwargs) -> "Database":
+        """Create a new database
+
+        :raises ~aiocouch.PreconditionFailedError: if the database already
+            exists and ``exists_ok`` is ``False``
+
+        :param type id: the identifier of the database
+        :param type exists_ok: If ``True``, don't raise if the database exists
+        :return: Returns a representation f the created database
+
+        """
         db = Database(self, id)
         if not await db._exists():
             await db._put(**kwargs)
@@ -70,5 +100,12 @@ class CouchDB(object):
     async def keys(self, **params):
         return await self._server._all_dbs(**params)
 
-    async def info(self):
+    async def info(self) -> dict:
+        """Returns the meta information about the connected CouchDB server.
+
+        See also :ref:`GET /<couchdb:api/server/root>`
+
+        :return: A dict containing the response json.
+
+        """
         return await self._server._info()
