@@ -53,25 +53,19 @@ We can also create new recipes, for instance for some delicious cookies.
 ## Run examples
 
 - Setup the CouchDB URL and credentials using the environment variables
-- Install using `pip install --editable '.[examples]'`
-- run `python examples/getting_started.py`
+- Install dependencies using `pip install --editable '.[examples]'`
+- run for instance `python examples/getting_started.py`
 
 
 ## Run tests
 
-- Setup the CouchDB URL and credentials using the environment variables
-- (Optional) install using `pip install --editable '.[tests]'`
+- Install dependencies using `pip install --editable '.[tests]'`
+- Setup the CouchDB URL and credentials using the environment variables (`COUCHDB_HOST`, `COUCHDB_USER`, `COUCHDB_PASS`)
 - run `pytest --cov=aiocouch`
 
 
-Or shorter for CI:
-
-```
-COUCHDB_HOST=http://localhost:5984 COUCHDB_USER=admin COUCHDB_PASS=admin python setup.py test
-```
-
 ## Generate documentation
 
-- (Optional) install using `pip install --editable '.[docs]'`
+- Install dependencies using `pip install '.[docs]'`
 - switch to the `docs` directory: `cd docs`
 - run `make html`
