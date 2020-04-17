@@ -69,14 +69,14 @@ class CouchDB(object):
         """
         await self._server.close()
 
-    async def create(self, id, exists_ok=False, **kwargs) -> "Database":
+    async def create(self, id: str, exists_ok: bool = False, **kwargs) -> "Database":
         """Create a new database
 
         :raises ~aiocouch.PreconditionFailedError: if the database already
             exists and ``exists_ok`` is ``False``
 
-        :param type id: the identifier of the database
-        :param type exists_ok: If ``True``, don't raise if the database exists
+        :param id: the identifier of the database
+        :param exists_ok: If ``True``, don't raise if the database exists
         :return: Returns a representation f the created database
 
         """
@@ -89,7 +89,15 @@ class CouchDB(object):
         else:
             raise PreconditionFailedError(f"The database '{id}' does already exist.")
 
-    async def __getitem__(self, id):
+    async def __getitem__(self, id: str) -> "Database":
+        """Returns a representation for the given database identifier
+
+        :raises ~aiocouch.NotFoundError: if the database does not exists
+
+        :param id: The identifier of the database
+        :return: The representation of the database
+
+        """
         db = Database(self, id)
 
         if not await db._exists():
@@ -97,7 +105,12 @@ class CouchDB(object):
 
         return db
 
-    async def keys(self, **params):
+    async def keys(self, **params) -> list:
+        """Returns all database names
+
+        :return: A list containing the names of all databases on the server
+
+        """
         return await self._server._all_dbs(**params)
 
     async def info(self) -> dict:

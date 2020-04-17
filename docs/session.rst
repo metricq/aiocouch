@@ -31,3 +31,4 @@ Reference
 
 .. autoclass:: aiocouch.CouchDB
     :members:
+    :special-members: __getitem__
