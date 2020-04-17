@@ -68,6 +68,10 @@ class Document(RemoteDocument):
         self._data_hash = hash(json.dumps(self._data, sort_keys=True))
 
     @property
+    def _fresh(self):
+        return len(self._data) == 1 and "_id" in self._data
+
+    @property
     def _dirty_cache(self):
         return self._data_hash is None or self._data_hash != hash(
             json.dumps(self._data, sort_keys=True)
@@ -86,7 +90,7 @@ class Document(RemoteDocument):
             exception will be raised.
 
         """
-        if self._dirty_cache and not discard_changes:
+        if self._dirty_cache and not (discard_changes or self._fresh):
             raise ConflictError(
                 f"Cannot fetch document '{self.id}' from server, "
                 "as the local cache has unsaved changes."

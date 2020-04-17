@@ -27,6 +27,13 @@ async def test_save(database):
     assert len(keys) == 1
 
 
+async def test_fetch_clean_document(filled_database):
+    from aiocouch.document import Document
+
+    doc = Document(filled_database, "foo")
+    await doc.fetch()
+
+
 async def test_fetch_dirty_document(database):
     from aiocouch import ConflictError
 
