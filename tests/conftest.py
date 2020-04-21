@@ -21,7 +21,7 @@ async def couchdb_user_account(couchdb):
 
 
 @pytest.fixture
-async def couchdb():
+async def couchdb(event_loop):
     from aiocouch import CouchDB
     import asyncio
     import os
@@ -41,7 +41,9 @@ async def couchdb():
     except KeyError:
         password = ""
 
-    async with CouchDB(hostname, user=user, password=password) as couchdb:
+    async with CouchDB(
+        hostname, user=user, password=password, loop=event_loop
+    ) as couchdb:
         yield couchdb
 
     # Give the couchdb server some time, so the assumptions of an empty database isn't broken for
