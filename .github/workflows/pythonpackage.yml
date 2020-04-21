@@ -54,7 +54,7 @@ jobs:
         docs-folder: "docs/"
 
   artifacts:
-    needs: [build, doc]
+    needs: [build, documentation]
     runs-on: ubuntu-latest
 
     steps:
