@@ -141,6 +141,17 @@ class Document(RemoteDocument):
         return await self._database[new_id]
 
     @property
+    def rev(self):
+        try:
+            return self._data["_rev"]
+        except KeyError:
+            return None
+
+    @rev.setter
+    def rev(self, new_rev):
+        self._data["_rev"] = new_rev
+
+    @property
     def data(self) -> dict:
         """Returns the local copy of the document as a dict
 

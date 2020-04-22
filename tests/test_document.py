@@ -52,12 +52,12 @@ async def test_save_with_data(database):
     await doc.save()
 
     assert doc["_id"] == doc.id == "foo"
-    assert doc["_rev"].startswith("1-")
+    assert doc.rev.startswith("1-")
     assert doc._dirty_cache is False
 
     doc = await database["foo"]
     assert doc["_id"] == doc.id == "foo"
-    assert doc["_rev"].startswith("1-")
+    assert doc.rev.startswith("1-")
     assert doc["blub"] == "blubber"
     assert doc._dirty_cache is False
 
@@ -79,36 +79,69 @@ async def test_conflict_without_rev(database):
     doc1 = await database.create("fou")
     doc2 = await database.create("fou")
 
+    assert doc1.rev is None
+
     doc1["blub"] = "new"
     await doc1.save()
+
+    assert doc1.rev.startswith("1-")
+    assert doc2.rev is None
 
     doc2["blub"] = "bar"
 
     with pytest.raises(ConflictError):
         await doc2.save()
 
+    assert doc2.rev is None
+
+
+async def test_override_conflict(database):
+    doc1 = await database.create("fou")
+    doc2 = await database.create("fou")
+
+    doc1["blub"] = "new"
+    await doc1.save()
+
+    doc2["blub"] = "bar"
+
+    try:
+        await doc2.save()
+        assert False
+    except ConflictError:
+        info = await doc2.info()
+        doc2.rev = doc1.rev
+        await doc2.save()
+
+    doc3 = await database["fou"]
+    assert doc3.rev.startswith("2-")
+    assert doc3["blub"] == "bar"
+
 
 async def test_update(filled_database):
     doc = await filled_database["foo"]
 
-    assert doc["_rev"].startswith("1-")
+    assert doc.rev == doc["_rev"]
+    assert doc.rev.startswith("1-")
     assert doc._dirty_cache is False
 
     del doc["bar"]
     doc["blub"] = "blubber"
 
+    assert doc["_rev"] == doc.rev
     assert doc["_rev"].startswith("1-")
     assert doc._dirty_cache is True
 
     await doc.save()
 
     assert doc["_id"] == doc.id == "foo"
+    assert doc["_rev"] == doc.rev
     assert doc["_rev"].startswith("2-")
     assert doc._dirty_cache is False
 
     doc = await filled_database["foo"]
     assert doc["_id"] == doc.id == "foo"
     assert doc["_rev"].startswith("2-")
+    assert doc["_rev"] == doc.rev
     assert doc._dirty_cache is False
     assert doc["blub"] == "blubber"
     assert "bar" not in doc
