@@ -258,9 +258,6 @@ class SecurityDocument(Document):
         super().__init__(database, "_security")
         del self._data["_id"]
 
-    async def fetch(self, discard_changes=False):
-        await super().fetch(discard_changes)
-
     @property
     def members(self):
         try:
