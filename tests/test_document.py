@@ -203,6 +203,16 @@ async def test_get_info(database):
         await doc.info()
 
 
+async def test_rev(doc):
+    assert doc.rev is None
+    await doc.save()
+    rev = doc.rev
+    assert rev.startswith("1-")
+    with pytest.raises(TypeError):
+        doc.rev = 42
+    assert doc.rev == rev
+
+
 async def test_doc_update(doc):
     assert "test" not in doc
 

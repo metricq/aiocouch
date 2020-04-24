@@ -148,7 +148,9 @@ class Document(RemoteDocument):
             return None
 
     @rev.setter
-    def rev(self, new_rev):
+    def rev(self, new_rev: str):
+        if not isinstance(new_rev, str):
+            raise TypeError("Revision must be a string.")
         self._data["_rev"] = new_rev
 
     @property
