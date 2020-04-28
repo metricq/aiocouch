@@ -50,6 +50,8 @@ We can also create new recipes, for instance for some delicious cookies.
         await new_doc.save()
 ```
 
+For further details please refer to the documentation, which is available [here on readthedocs.org](https://aiocouch.readthedocs.io/).
+
 ## Run examples
 
 - Setup the CouchDB URL and credentials using the environment variables
