@@ -44,15 +44,16 @@ class Document(RemoteDocument):
     An instance of this class represents a local copy of the document data on the
     server. This class behaves like a dict containing the document data and allows to
     :func:`~aiocouch.document.Document.fetch` and
-    :func:`~aiocouch.document.Document.save` documents.
+    :func:`~aiocouch.document.Document.save` documents. For details about the dict-like
+    interface, please refer to the :ref:`Python manual <python:typesmapping>`.
 
     Constructing an instance of this class does not cause any network requests.
 
     :ivar id: the id of the document
 
-    :param `aiocouch.database.Database` database: The database of the document
+    :param `~aiocouch.database.Database` database: The database of the document
     :param id: the id of the document
-    :param data: the inital data for the document
+    :param data: the inital data used to set the body of the document
 
     """
 
@@ -141,7 +142,12 @@ class Document(RemoteDocument):
         return await self._database[new_id]
 
     @property
-    def rev(self):
+    def rev(self) -> str:
+        """Allows to set and get the local revision
+
+        If the local document wasn't fetched or saved, this is ``None``.
+
+        """
         try:
             return self._data["_rev"]
         except KeyError:
