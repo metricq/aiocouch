@@ -8,8 +8,6 @@ Current version is |release|.
 
 .. _GitHub: https://github.com/metricq/aiocouch
 
-.. module:: aiocouch
-
 Key features
 ============
 
@@ -32,7 +30,7 @@ Getting started
 The following code retrieves and prints the list of ``incredients`` of the ``apple_pie`` ``recipe``.
 The ``incredients`` are stored as a list in the ``apple_pie`` :class:`~aiocouch.document.Document`,
 which is part of the ``recipe`` :class:`~aiocouch.database.Database`. We use the context manager
-:class:`aiocouch.CouchDB` to create a new session.
+:class:`~aiocouch.CouchDB` to create a new session.
 
 .. code-block:: python
 
