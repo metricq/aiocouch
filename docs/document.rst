@@ -1,3 +1,4 @@
+=========
 Documents
 =========
 
@@ -7,7 +8,7 @@ retrieved from the server is represented by an instance of that class. There are
 
 
 Getting a Document instance
------------------------------
+===========================
 
 While the constructor can be used to get an instance representing a specific document, the canonical
 way is the usage of member functions of instances of the :class:`~aiocouch.database.Database` class.
@@ -28,7 +29,7 @@ snippet is equivalent to this:
 
 
 Creating new Documents
-----------------------
+======================
 
 The creation of a new document on the server consists of three steps. First, you need a local
 document handle, i.e., an :class:`~aiocouch.document.Document` instance. Then you set the contents
@@ -47,7 +48,7 @@ of the document. And finally, the local document is saved to the server.
 
 
 Modify existing documents
--------------------------
+=========================
 
 The modification of an existing document works very similarly to the creation. Retrieving the
 document, updating its contents, and finally saving the modified data to the server.
@@ -64,7 +65,7 @@ document, updating its contents, and finally saving the modified data to the ser
     await doc.save()
 
 Conflict handling
------------------
+=================
 
 Whenever, two or more different :class:`~aiocouch.document.Document` instances want to save the same
 document on the server, a :class:`~aiocouch.ConflictError` can occur. To cope with conflicts, there
@@ -93,7 +94,7 @@ Other applications may require a more sophisticated merging of documents. Howeve
 generic solution to this approach. Thus, we forego to show example code here.
 
 Reference
----------
+=========
 
 .. autoclass:: aiocouch.document.Document
     :members:

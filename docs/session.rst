@@ -1,3 +1,4 @@
+=======
 Session
 =======
 
@@ -6,7 +7,7 @@ instance of :class:`aiocouch.CouchDB`. A session can be created using the constr
 or by using the class as a context manager.
 
 Examples
---------
+========
 
 Create a session with the context manager
 
@@ -27,7 +28,7 @@ A session can also be handled using variables. The session needs to be closed ma
 
 
 Reference
----------
+=========
 
 .. autoclass:: aiocouch.CouchDB
     :members:
