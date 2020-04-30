@@ -29,7 +29,7 @@ setup(
     extras_require={
         "examples": ["aiomonitor", "click", "click-log", "click-completion"],
         "tests": test_deps,
-        "docs": ["sphinx", "sphinx-autodoc-typehints"],
+        "docs": ["sphinx", "sphinx-autodoc-typehints", "sphinxcontrib-trio"],
     },
     project_urls={
         "Source": "https://github.com/metricq/aiocouch",
