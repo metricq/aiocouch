@@ -54,6 +54,12 @@ We can also create new recipes, for instance for some delicious cookies.
     #
 
 
+Tutorial
+========
+
+You can find a more in-depth discussion of the core concepts and next steps at
+the :ref:`introduction` page.
+
 Source code
 ===========
 
@@ -91,6 +97,7 @@ Table of contents
 .. toctree::
    :maxdepth: 1
 
+   intro
    session
    database
    document
