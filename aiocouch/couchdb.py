@@ -77,7 +77,7 @@ class CouchDB(object):
 
         :param id: the identifier of the database
         :param exists_ok: If ``True``, don't raise if the database exists
-        :return: Returns a representation f the created database
+        :return: Returns a representation for the created database
 
         """
         db = Database(self, id)
