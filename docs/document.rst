@@ -79,7 +79,7 @@ of the document matters.
     with contextlib.suppress(aiocouch.ConflictError):
         await doc.save()
 
-Another trivial solution is to override the contents of the existing document.
+Another straight-forward solution is to override the contents of the existing document.
 
 .. code-block :: python
 
@@ -88,10 +88,10 @@ Another trivial solution is to override the contents of the existing document.
     except aiocouch.ConflictError:
         info = await doc.info()
         doc.rev = info["rev"]
-        await doc2.save()
+        await doc.save()
 
-Other applications may require a more sophisticated merging of documents. However, there isn't a
-generic solution to this approach. Thus, we forego to show example code here.
+Other use cases may require a more sophisticated merging of documents. However, there isn't a
+generic solution to such an approach. Thus, we forego to show example code here.
 
 Reference
 =========

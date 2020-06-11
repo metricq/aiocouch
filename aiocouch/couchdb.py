@@ -70,7 +70,7 @@ class CouchDB(object):
         await self._server.close()
 
     async def create(self, id: str, exists_ok: bool = False, **kwargs) -> "Database":
-        """Create a new database
+        """Creates a new database on the server
 
         :raises ~aiocouch.PreconditionFailedError: if the database already
             exists and ``exists_ok`` is ``False``
