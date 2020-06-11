@@ -33,6 +33,7 @@ from .document import Document, SecurityDocument
 from .design_document import DesignDocument
 from .exception import ConflictError, NotFoundError
 from .remote import RemoteDatabase
+from .request import FindRequest
 from .view import AllDocsView, View
 
 from contextlib import suppress
@@ -167,22 +168,8 @@ class Database(RemoteDatabase):
         if "fields" in selector.keys():
             raise ValueError("selector must not contain a fields entry")
 
-        # We must use pagination because otherwise the default limit of the _find endpoint
-        # fucks us
-        pagination_size = limit if limit is not None else 10000
-
-        while True:
-            result_chunk = await self._find(selector, limit=pagination_size, **params)
-
-            for res in result_chunk["docs"]:
-                doc = Document(self, res["_id"])
-                doc._update_cache(res)
-                yield doc
-
-            if len(result_chunk["docs"]) < pagination_size or limit is not None:
-                break
-
-            params["bookmark"] = result_chunk["bookmark"]
+        async for doc in FindRequest(self, selector, limit, **params):
+            yield doc
 
     def update_docs(self, ids, create=False):
         return BulkOperation(self, ids, create)
