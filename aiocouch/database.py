@@ -163,7 +163,24 @@ class Database(RemoteDatabase):
 
         return ddoc
 
-    async def find(self, selector, limit=None, **params):
+    async def find(
+        self, selector, limit=None, **params
+    ) -> AsyncGenerator["Document", None]:
+        """Fetch documents based on search criteria
+
+        This method allows to use the :ref:`_find<couchdb:api/db/_find>`
+        endpoint of the database.
+
+        This method supports all request paramters listed in
+        :ref:`_find<couchdb:api/db/_find>`.
+
+        .. note:: As this returns :class:`~aiocouch.document.Document` s, which
+            contain the complete data, the `fields` selector is not supported.
+
+        :param type selector: See :ref:`selectors<couchdb:find/selectors>`
+        :return: return all documents matching the passed selector.
+        """
+
         # we need to get the complete doc, so fields selector isn't allowed
         if "fields" in selector.keys():
             raise ValueError("selector must not contain a fields entry")
