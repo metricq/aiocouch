@@ -38,6 +38,21 @@ By default, `aiocouch` only allows to use the create method for a database that 
 the server.
 
 
+Listing documents
+=================
+
+The :ref:`_all_docs<couchdb:api/db/all_docs>` view allows to retrieve all documents stored in a
+given database on the server. `aiocouch` also exposes this view as methods of the database class.
+
+The method :meth:`~aiocouch.database.Database.docs` allows to retrieve documents by a list of ids
+or all documents with ids matching a given prefix. Similar to a dict, all documents of a database
+can be iterated with the methods :meth:`~aiocouch.database.Database.akeys`, and
+:meth:`~aiocouch.database.Database.values`.
+
+To perform more sophisticated document selections, the method
+:meth:`~aiocouch.database.Database.find` allows to search for documents matching the complex
+:ref:`selector syntax<couchdb:find/selectors>` of CouchDB.
+
 Reference
 =========
 
