@@ -174,16 +174,16 @@ class Database(RemoteDatabase):
         This method supports all request paramters listed in
         :ref:`_find<couchdb:api/db/_find>`.
 
-        .. note:: As this returns :class:`~aiocouch.document.Document` s, which
-            contain the complete data, the `fields` selector is not supported.
+        .. note:: As this methid returns :class:`~aiocouch.document.Document` s, which
+            contain the complete data, the `fields` parameter is not supported.
 
         :param type selector: See :ref:`selectors<couchdb:find/selectors>`
         :return: return all documents matching the passed selector.
         """
 
         # we need to get the complete doc, so fields selector isn't allowed
-        if "fields" in selector.keys():
-            raise ValueError("selector must not contain a fields entry")
+        if "fields" in params.keys():
+            raise ValueError("The fields parameter isn't supported")
 
         async for doc in FindRequest(self, selector, limit, **params):
             yield doc

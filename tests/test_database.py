@@ -224,12 +224,9 @@ async def test_find_limited(filled_database):
     assert "baz2" in matching_keys
 
 
-async def test_find_invalid_selector(database):
+async def test_find_fields_parameter_gets_rejected(database):
     with pytest.raises(ValueError):
-        [
-            doc
-            async for doc in database.find({"bar": True, "fields": "anything"}, limit=1)
-        ]
+        [doc async for doc in database.find({"bar": True}, fields="anything")]
 
 
 async def test_alldocs_values(filled_database):
