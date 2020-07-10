@@ -127,6 +127,9 @@ class Database(RemoteDatabase):
             see :ref:`CouchDB view endpoint <couchdb:api/ddoc/view>`.
 
         """
+        if ids is not None and len(ids) == 0:
+            return
+
         async for doc in self.all_docs.docs(ids, create, prefix, **params):
             yield doc
 
