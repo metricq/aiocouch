@@ -1,3 +1,7 @@
+# v1.2.0
+
+- Adds documentation
+
 # v1.1.0
 - Adds Database.create_docs similar to update_docs, but without retrieving documents first
 - Renames Document.fetch_info() to info()

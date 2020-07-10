@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -24,7 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install --editable '.[tests]'
+        pip install '.[tests]'
     - name: Lint with flake8
       run: |
         pip install flake8
@@ -38,11 +37,24 @@ jobs:
         args: ". --check"
     - name: Test with pytest
       run: |
-        pip install pytest
-        pytest
+        python -m pytest --cov-report xml --cov aiocouch
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        name: Python ${{ matrix.python-version }}
 
-  release:
-    needs: [build]
+  documentation:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - uses: ammaraskar/sphinx-action@master
+      with:
+        pre-build-command: "pip install '.[docs]'"
+        docs-folder: "docs/"
+
+  artifacts:
+    needs: [build, documentation]
     runs-on: ubuntu-latest
 
     steps:

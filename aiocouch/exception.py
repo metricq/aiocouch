@@ -35,34 +35,50 @@ import functools
 
 
 class BadRequestError(ValueError):
+    """Represents a 400 HTTP status code returned from the server"""
+
     pass
 
 
 class UnauthorizedError(PermissionError):
+    """Represents a 401 HTTP status code returned from the server"""
+
     pass
 
 
 class ForbiddenError(PermissionError):
+    """Represents a 403 HTTP status code returned from the server"""
+
     pass
 
 
 class NotFoundError(KeyError):
+    """Represents a 404 HTTP status code returned from the server"""
+
     pass
 
 
 class ConflictError(KeyError):
+    """Represents a 409 HTTP status code returned from the server"""
+
     pass
 
 
-class ExpectationFailedError(ValueError):
-    pass
+class PreconditionFailedError(ValueError):
+    """Represents a 412 HTTP status code returned from the server"""
 
-
-class PreconditionFailedError(RuntimeError):
     pass
 
 
 class UnsupportedMediaTypeError(ValueError):
+    """Represents a 415 HTTP status code returned from the server"""
+
+    pass
+
+
+class ExpectationFailedError(ValueError):
+    """Represents a 417 HTTP status code returned from the server"""
+
     pass
 
 
