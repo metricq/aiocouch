@@ -192,6 +192,18 @@ async def test_docs_with_no_ids(filled_database):
     assert sorted(keys) == ["baz", "baz2", "foo", "foo2"]
 
 
+async def test_docs_do_not_contain_ddocs(filled_database_with_view):
+    keys = [doc.id async for doc in filled_database_with_view.docs()]
+
+    assert "_design/test_ddoc" not in keys
+
+
+async def test_docs_contain_ddocs_with_param(filled_database_with_view):
+    keys = [doc.id async for doc in filled_database_with_view.docs(include_ddocs=True)]
+
+    assert "_design/test_ddoc" in keys
+
+
 async def test_find(filled_database):
     matching_docs = [doc async for doc in filled_database.find({"bar": True})]
 

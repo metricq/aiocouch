@@ -109,20 +109,27 @@ class Database(RemoteDatabase):
         await self._delete()
 
     async def docs(
-        self, ids: list = None, create: bool = False, prefix: str = None, **params
+        self,
+        ids: list = None,
+        create: bool = False,
+        prefix: str = None,
+        include_ddocs: bool = False,
+        **params,
     ) -> AsyncGenerator["Document", None]:
         """A generator to iterator over all or a subset of documents in the database.
 
         When neither of ``ids`` nor ``prefix`` are specified, all documents will be
-        iterated. Only one of ``ids`` and ``prefix`` can be specified.
+        iterated. Only one of ``ids`` and ``prefix`` can be specified. By default, design
+        documents are not included.
 
         :param ids: Allows to iterate over a subset of documents by passing a list of
             document ids
         :param create: If ``True``, every document contained in `ids`, which doesn't
             exists, will be represented by an empty
             :class:`~aiocouch.document.Document` instance.
-        :param  prefix: Allows to iterator over a subset of documents by specifing a
+        :param prefix: Allows to iterator over a subset of documents by specifing a
             prefix that the documents must match.
+        :param include_ddocs: Include the design documents of the database.
         :param params: Additional query parameters,
             see :ref:`CouchDB view endpoint <couchdb:api/ddoc/view>`.
 
@@ -130,7 +137,9 @@ class Database(RemoteDatabase):
         if ids is not None and len(ids) == 0:
             return
 
-        async for doc in self.all_docs.docs(ids, create, prefix, **params):
+        async for doc in self.all_docs.docs(
+            ids, create, prefix, include_ddocs, **params
+        ):
             yield doc
 
     async def values(self, **params) -> AsyncGenerator["Document", None]:

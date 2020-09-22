@@ -79,7 +79,9 @@ class View(RemoteView):
         async for res in self.get(**params):
             yield res["value"]
 
-    async def docs(self, ids=None, create=False, prefix=None, **params):
+    async def docs(
+        self, ids=None, create=False, prefix=None, include_ddocs=False, **params
+    ):
         params["include_docs"] = True
         if prefix is None:
             if ids is None:
@@ -99,6 +101,8 @@ class View(RemoteView):
 
         async for res in iter:
             if "error" not in res and res["doc"] is not None:
+                if res["id"].startswith("_design/") and not include_ddocs:
+                    continue
                 doc = Document(self._database, res["id"])
                 doc._update_cache(res["doc"])
                 yield doc
