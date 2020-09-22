@@ -90,4 +90,5 @@ html_theme_options = {
     "github_type": "star",
     "github_banner": True,
     "fixed_sidebar": True,
+    "codecov_button": True,
 }
