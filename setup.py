@@ -4,7 +4,7 @@ test_deps = ["pytest", "pytest-asyncio", "pytest-cov", "packaging"]
 
 setup(
     name="aiocouch",
-    version="1.1.0",
+    version="2.0.0",
     license="BSD 3-clause",
     description="🛋 An asynchronous client library for CouchDB 2.x",
     author="TU Dresden",
