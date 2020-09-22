@@ -24,7 +24,8 @@ _changelog_path = os.path.abspath(
 with open(_changelog_path, "r") as changelog:
     try:
         _version_info = re.match(
-            r"# v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)", changelog.readline(),
+            r"# v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)",
+            changelog.readline(),
         ).groupdict()
     except (OSError, IndexError):
         raise RuntimeError("Unable to determine version.")

@@ -46,7 +46,8 @@ async def test_cookie_authentication(event_loop, couchdb_with_user_access):
     # create a session cookie, which can be used later
     async with aiohttp.ClientSession() as session:
         async with session.post(
-            f"{hostname}/_session", data={"name": user, "password": user},
+            f"{hostname}/_session",
+            data={"name": user, "password": user},
         ) as resp:
             assert resp.status == 200
             await resp.json()

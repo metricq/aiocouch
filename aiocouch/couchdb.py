@@ -58,15 +58,13 @@ class CouchDB(object):
     async def check_credentials(self):
         """Check the provided credentials.
 
-            :raises ~aiocouch.UnauthorizedError: if provided credentials aren't valid
+        :raises ~aiocouch.UnauthorizedError: if provided credentials aren't valid
 
         """
         await self._server._check_session()
 
     async def close(self):
-        """Closes the connection to the CouchDB server
-
-        """
+        """Closes the connection to the CouchDB server"""
         await self._server.close()
 
     async def create(self, id: str, exists_ok: bool = False, **kwargs) -> "Database":
