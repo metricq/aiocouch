@@ -165,10 +165,11 @@ class Database(RemoteDatabase):
     async def design_doc(self, id, exists_ok=False):
         ddoc = DesignDocument(self, id)
 
-        if await ddoc._exists():
-            if exists_ok:
+        if exists_ok:
+            with suppress(NotFoundError):
                 await ddoc.fetch(discard_changes=True)
-            else:
+        else:
+            if await ddoc._exists():
                 raise ConflictError(
                     f"The design document '{id}' does already exist in the database '{self.id}'"
                 )
