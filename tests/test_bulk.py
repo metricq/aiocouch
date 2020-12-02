@@ -51,6 +51,16 @@ async def test_update_docs_no_change(filled_database):
     assert docs.status == []
 
 
+async def test_update_dont_crash_on_pristine_doc(filled_database):
+    doc = await filled_database["foo"]
+    doc["llama"] = "awesome"
+    await doc.save()
+
+    async with filled_database.update_docs(["foo", "baz"], create=True) as docs:
+        async for doc in docs:
+            doc["llama"] = "awesome"
+
+
 async def test_update_docs_for_deleted(filled_database):
     doc = await filled_database["foo"]
     await doc.delete()

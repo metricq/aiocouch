@@ -55,7 +55,8 @@ class BulkStoreOperation(object):
         self.ok = []
         self.error = []
 
-        for status, doc in zip(self.status, self._docs):
+        docs = [doc for doc in self._docs if doc._dirty_cache]
+        for status, doc in zip(self.status, docs):
             assert status["id"] == doc.id
             if "ok" in status:
                 doc._update_rev_after_save(status)
