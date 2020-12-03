@@ -1,3 +1,8 @@
+# v2.0.1
+
+- Fixes a crash in bulk operations
+- Fixes a redundant HEAD request during the creation of design document objects
+
 # v2.0.0
 
 - Adds documentation
