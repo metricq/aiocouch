@@ -47,6 +47,8 @@ class Database(RemoteDatabase):
     to create and retrieve :class:`~aiocouch.document.Document` instances, as well as
     the iteration other many documents.
 
+    :ivar id: the id of the database
+
     :param `~aiocouch.CouchDB` couchdb: The CouchDB connection session
     :param id: the id of the database
 
@@ -125,7 +127,7 @@ class Database(RemoteDatabase):
         :param ids: Allows to iterate over a subset of documents by passing a list of
             document ids
         :param create: If ``True``, every document contained in `ids`, which doesn't
-            exists, will be represented by an empty
+            exist, will be represented by an empty
             :class:`~aiocouch.document.Document` instance.
         :param prefix: Allows to iterator over a subset of documents by specifing a
             prefix that the documents must match.
@@ -187,7 +189,7 @@ class Database(RemoteDatabase):
         This method supports all request paramters listed in
         :ref:`_find<couchdb:api/db/_find>`.
 
-        .. note:: As this methid returns :class:`~aiocouch.document.Document` s, which
+        .. note:: As this method returns :class:`~aiocouch.document.Document` s, which
             contain the complete data, the `fields` parameter is not supported.
 
         :param type selector: See :ref:`selectors<couchdb:find/selectors>`
@@ -210,7 +212,7 @@ class Database(RemoteDatabase):
     async def __getitem__(self, id: str) -> "Document":
         """Returns the document with the given id
 
-        :raises `~aiocouch.NotFoundError`: if the given document does not exists
+        :raises `~aiocouch.NotFoundError`: if the given document does not exist
 
         :param id: the name of the document
         :return: a local copy of the document
@@ -221,12 +223,12 @@ class Database(RemoteDatabase):
     async def get(self, id: str, default: dict = None):
         """Returns the document with the given id
 
-        :raises `~aiocouch.NotFoundError`: if the given document does not exists and
+        :raises `~aiocouch.NotFoundError`: if the given document does not exist and
             `default` is `None`
 
 
         :param id: the name of the document
-        :param default: if `default` is not `None` and the document does not exists on
+        :param default: if `default` is not `None` and the document does not exist on
             the server, a new :class:`~aiocouch.document.Document` instance, containing
             `default` as its contents, is returned. To create the document on the
             server, :meth:`~aiocouch.document.Document.save` has to be called on the

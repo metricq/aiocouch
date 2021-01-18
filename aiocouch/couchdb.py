@@ -90,7 +90,7 @@ class CouchDB(object):
     async def __getitem__(self, id: str) -> "Database":
         """Returns a representation for the given database identifier
 
-        :raises ~aiocouch.NotFoundError: if the database does not exists
+        :raises ~aiocouch.NotFoundError: if the database does not exist
 
         :param id: The identifier of the database
         :return: The representation of the database

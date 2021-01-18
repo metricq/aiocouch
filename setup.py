@@ -32,6 +32,7 @@ setup(
         "docs": ["sphinx", "sphinx-autodoc-typehints", "sphinxcontrib-trio"],
     },
     project_urls={
+        "Documentation": "https://aiocouch.readthedocs.io/en/stable",
         "Source": "https://github.com/metricq/aiocouch",
         "Bug Tracker": "https://github.com/metricq/aiocouch/issues",
     },

@@ -93,12 +93,7 @@ class RemoteServer(object):
         return await self._request("HEAD", path, params=params)
 
     async def _request(
-        self,
-        method,
-        path,
-        params,
-        return_json=True,
-        **kwargs,
+        self, method, path, params, return_json=True, **kwargs,
     ):
         kwargs["params"] = _stringify_params(params)
 

@@ -30,20 +30,53 @@ from .remote import RemoteAttachment
 
 
 class Attachment(RemoteAttachment):
-    async def exists(self):
+    """A local representation for the referenced CouchDB document attachment
+
+    An instance of this class represents a local copy of an attachment of CouchDB
+    documents.
+
+    :ivar id: the id of the attachment
+    :ivar content_type: the content type of the attachment, only available after
+        :meth:`~aiocouch.attachment.Attachment.fetch()` has been called.
+
+    :param `~aiocouch.document.Document` document: The correlated document
+    :param id: the id of the attachment
+
+    """
+
+    async def exists(self) -> bool:
+        """Checks if the attachment exists on the server
+
+        :return: returns True if the attachment exists
+        """
         return await self._exists()
 
-    async def fetch(self):
+    async def fetch(self) -> dict:
+        """Returns the content of the attachment
+
+        :return: the attachment content
+
+        """
         return await self._get()
 
-    async def save(self, data, content_type):
+    async def save(self, data: dict, content_type: str):
+        """Saves the given attachment content on the server
+
+        :param data: the content of the attachment
+        :param content_type: the content type of the given data. (See
+            `Content type <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17>`_)
+
+        """
         await self._put(await self._get_doc_rev(), data, content_type)
         # Parent document needs to have '_attachments' and '_rev' updated:
         await self._document.fetch()
 
     async def delete(self):
+        """Deletes the attachment from the server
+
+        """
         await self._delete(await self._get_doc_rev())
-        # Parent document needs to have '_attachments' and '_rev' updated:
+        # Parent document needs to have '_attachments' and '_rev' updated
         await self._document.fetch()
 
     async def _get_doc_rev(self):
