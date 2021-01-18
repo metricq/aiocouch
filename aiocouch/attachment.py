@@ -72,9 +72,7 @@ class Attachment(RemoteAttachment):
         await self._document.fetch()
 
     async def delete(self):
-        """Deletes the attachment from the server
-
-        """
+        """Deletes the attachment from the server"""
         await self._delete(await self._get_doc_rev())
         # Parent document needs to have '_attachments' and '_rev' updated
         await self._document.fetch()
