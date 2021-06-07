@@ -31,7 +31,7 @@
 from .document import Document
 
 
-class FindRequestChunk(object):
+class FindRequestChunk:
     def __init__(self, database, data, pagination_size):
         self.database = database
         self.data = data
@@ -53,7 +53,7 @@ class FindRequestChunk(object):
         return len(self.data["docs"]) < self.pagination_size
 
 
-class FindRequest(object):
+class FindRequest:
     def __init__(self, database, selector, limit=None, **params):
         self.database = database
         self.selector = selector

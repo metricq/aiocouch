@@ -31,7 +31,7 @@
 from .document import Document
 
 
-class BulkStoreOperation(object):
+class BulkStoreOperation:
     def __init__(self, database, ids=[]):
         self._database = database
         self._ids = ids

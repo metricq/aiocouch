@@ -33,7 +33,7 @@ from .database import Database
 from .remote import RemoteServer
 
 
-class CouchDB(object):
+class CouchDB:
     """CouchDB Server Connection Session
 
     The

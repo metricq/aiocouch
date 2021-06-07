@@ -57,7 +57,7 @@ def _stringify_params(params):
     return result
 
 
-class RemoteServer(object):
+class RemoteServer:
     def __init__(self, server, user=None, password=None, cookie=None, **kwargs):
         self._server = server
         auth = aiohttp.BasicAuth(user, password) if user else None
@@ -133,7 +133,7 @@ class RemoteServer(object):
         return await self._get("/_session")
 
 
-class RemoteDatabase(object):
+class RemoteDatabase:
     def __init__(self, remote, id):
         self.id = id
         self._remote = remote
@@ -216,7 +216,7 @@ class RemoteDatabase(object):
         return json
 
 
-class RemoteDocument(object):
+class RemoteDocument:
     def __init__(self, database, id):
         self._database = database
         self.id = id
@@ -296,7 +296,7 @@ class RemoteDocument(object):
         return json
 
 
-class RemoteAttachment(object):
+class RemoteAttachment:
     def __init__(self, document, id):
         self._document = document
         self.id = id
@@ -359,7 +359,7 @@ class RemoteAttachment(object):
         return json
 
 
-class RemoteView(object):
+class RemoteView:
     def __init__(self, database, ddoc, id):
         self._database = database
         self.ddoc = ddoc
