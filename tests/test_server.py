@@ -1,7 +1,6 @@
-from aiocouch import CouchDB, Database
-
 import pytest
 
+from aiocouch import CouchDB, Database
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

@@ -29,10 +29,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from types import TracebackType
-from typing import Any, List, Dict, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
-from .exception import PreconditionFailedError, NotFoundError
 from .database import Database
+from .exception import NotFoundError, PreconditionFailedError
 from .remote import RemoteServer
 
 JsonDict = Dict[str, Any]

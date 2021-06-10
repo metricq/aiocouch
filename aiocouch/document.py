@@ -30,7 +30,8 @@
 
 import json
 from contextlib import suppress
-from typing import Any, Dict, ItemsView, List, Optional, cast, KeysView, ValuesView
+from typing import (Any, Dict, ItemsView, KeysView, List, Optional, ValuesView,
+                    cast)
 
 from deprecated import deprecated
 

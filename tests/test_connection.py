@@ -1,10 +1,10 @@
-from aiocouch import CouchDB
-
 import os
 from contextlib import suppress
 from typing import Optional
 
 import pytest
+
+from aiocouch import CouchDB
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -36,11 +36,11 @@ async def test_session(couchdb: CouchDB) -> None:
 
 
 async def test_cookie_authentication(couchdb_with_user_access: CouchDB) -> None:
-    from aiocouch import CouchDB
+    import os
 
     import aiohttp
 
-    import os
+    from aiocouch import CouchDB
 
     try:
         hostname = os.environ["COUCHDB_HOST"]
@@ -68,8 +68,9 @@ async def test_cookie_authentication(couchdb_with_user_access: CouchDB) -> None:
 
 
 async def test_basic_authentication() -> None:
-    from aiocouch import CouchDB
     import os
+
+    from aiocouch import CouchDB
 
     try:
         hostname = os.environ["COUCHDB_HOST"]
@@ -90,10 +91,9 @@ async def test_basic_authentication() -> None:
 
 
 async def test_with_wrong_credentials() -> None:
-    from aiocouch import CouchDB
-    from aiocouch import UnauthorizedError
-
     import os
+
+    from aiocouch import CouchDB, UnauthorizedError
 
     try:
         hostname = os.environ["COUCHDB_HOST"]
@@ -110,10 +110,9 @@ async def test_with_wrong_credentials() -> None:
 
 
 async def test_check_wrong_credentials() -> None:
-    from aiocouch import CouchDB
-    from aiocouch import UnauthorizedError
-
     import os
+
+    from aiocouch import CouchDB, UnauthorizedError
 
     try:
         hostname = os.environ["COUCHDB_HOST"]

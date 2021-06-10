@@ -34,9 +34,8 @@ from urllib.parse import quote
 
 import aiohttp
 
+from . import database, document
 from .exception import NotFoundError, raises
-from . import database
-from . import document
 
 JsonDict = Dict[str, Any]
 RequestResult = Tuple[JsonDict, Union[bytes, JsonDict]]

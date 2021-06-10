@@ -28,27 +28,19 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from contextlib import suppress
+from functools import partial
+from typing import (Any, AsyncContextManager, AsyncGenerator, Callable, Dict,
+                    List, Optional, TypeVar)
+
+from . import couchdb
 from .bulk import BulkOperation, BulkStoreOperation
-from .document import Document, SecurityDocument
 from .design_document import DesignDocument
+from .document import Document, SecurityDocument
 from .exception import ConflictError, NotFoundError
 from .remote import RemoteDatabase
 from .request import FindRequest
 from .view import AllDocsView, View
-from . import couchdb
-
-from contextlib import suppress
-from functools import partial
-from typing import (
-    List,
-    AsyncGenerator,
-    AsyncContextManager,
-    Callable,
-    TypeVar,
-    Any,
-    Optional,
-    Dict,
-)
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 JsonDict = Dict[str, Any]

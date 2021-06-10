@@ -30,10 +30,10 @@
 
 import functools
 from contextlib import suppress
-from typing import Any, Callable, NoReturn, TypeVar, cast, Optional, Type, Dict
-from typing_extensions import Protocol
+from typing import Any, Callable, Dict, NoReturn, Optional, Type, TypeVar, cast
 
 import aiohttp
+from typing_extensions import Protocol
 
 
 class Endpoint(Protocol):

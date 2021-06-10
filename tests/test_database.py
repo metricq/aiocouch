@@ -1,6 +1,6 @@
-from aiocouch.database import Database
-
 import pytest
+
+from aiocouch.database import Database
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

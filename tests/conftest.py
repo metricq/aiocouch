@@ -1,9 +1,9 @@
-from aiocouch import CouchDB, Database, Document
-
-from typing import Any, AsyncGenerator, Optional
 from contextlib import suppress
+from typing import Any, AsyncGenerator, Optional
 
 import pytest
+
+from aiocouch import CouchDB, Database, Document
 
 
 @pytest.fixture
@@ -27,9 +27,10 @@ async def couchdb_user_account(couchdb: CouchDB) -> AsyncGenerator[CouchDB, None
 
 @pytest.fixture
 async def couchdb(event_loop: Any) -> AsyncGenerator[CouchDB, None]:
-    from aiocouch import CouchDB
     import asyncio
     import os
+
+    from aiocouch import CouchDB
 
     try:
         hostname = os.environ["COUCHDB_HOST"]
@@ -62,8 +63,9 @@ async def couchdb(event_loop: Any) -> AsyncGenerator[CouchDB, None]:
 async def couchdb_with_user_access(
     couchdb_user_account: CouchDB,
 ) -> AsyncGenerator[CouchDB, None]:
-    from aiocouch import CouchDB
     import os
+
+    from aiocouch import CouchDB
 
     try:
         hostname = os.environ["COUCHDB_HOST"]

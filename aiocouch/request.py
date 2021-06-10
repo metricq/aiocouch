@@ -30,8 +30,8 @@
 
 from typing import Any, AsyncGenerator, Dict, Optional, cast
 
-from .document import Document
 from . import database
+from .document import Document
 
 
 class FindRequestChunk:

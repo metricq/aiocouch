@@ -31,18 +31,10 @@
 from .couchdb import CouchDB
 from .database import Database
 from .document import Document
+from .exception import (BadRequestError, ConflictError, ExpectationFailedError,
+                        ForbiddenError, NotFoundError, PreconditionFailedError,
+                        UnauthorizedError, UnsupportedMediaTypeError)
 from .view import View
-
-from .exception import (
-    BadRequestError,
-    ConflictError,
-    UnauthorizedError,
-    ForbiddenError,
-    NotFoundError,
-    ExpectationFailedError,
-    PreconditionFailedError,
-    UnsupportedMediaTypeError,
-)
 
 __all__ = [
     "CouchDB",
