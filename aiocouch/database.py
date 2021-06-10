@@ -30,8 +30,16 @@
 
 from contextlib import suppress
 from functools import partial
-from typing import (Any, AsyncContextManager, AsyncGenerator, Callable, Dict,
-                    List, Optional, TypeVar)
+from typing import (
+    Any,
+    AsyncContextManager,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    TypeVar,
+)
 
 from . import couchdb
 from .bulk import BulkOperation, BulkStoreOperation
