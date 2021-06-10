@@ -16,7 +16,7 @@ jobs:
         uses: iamssen/couchdb-github-action@0.3.0
         with:
           couchdb-version: ${{ matrix.couchdb }}
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
         with:
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: ammaraskar/sphinx-action@master
         with:
           pre-build-command: "pip install '.[docs]'"
