@@ -1,8 +1,13 @@
+from aiocouch import CouchDB, Database, Document
+
+from typing import Any, AsyncGenerator, Optional
+from contextlib import suppress
+
 import pytest
 
 
 @pytest.fixture
-async def couchdb_user_account(couchdb):
+async def couchdb_user_account(couchdb: CouchDB) -> AsyncGenerator[CouchDB, None]:
     users = await couchdb.create("_users", exists_ok=True)
 
     doc = await users.create("org.couchdb.user:aiocouch_test_user")
@@ -21,7 +26,7 @@ async def couchdb_user_account(couchdb):
 
 
 @pytest.fixture
-async def couchdb(event_loop):
+async def couchdb(event_loop: Any) -> AsyncGenerator[CouchDB, None]:
     from aiocouch import CouchDB
     import asyncio
     import os
@@ -31,10 +36,10 @@ async def couchdb(event_loop):
     except KeyError:
         hostname = "http://localhost:5984"
 
-    try:
+    user: Optional[str] = None
+
+    with suppress(KeyError):
         user = os.environ["COUCHDB_USER"]
-    except KeyError:
-        user = None
 
     try:
         password = os.environ["COUCHDB_PASS"]
@@ -54,7 +59,9 @@ async def couchdb(event_loop):
 
 
 @pytest.fixture
-async def couchdb_with_user_access(couchdb_user_account):
+async def couchdb_with_user_access(
+    couchdb_user_account: CouchDB,
+) -> AsyncGenerator[CouchDB, None]:
     from aiocouch import CouchDB
     import os
 
@@ -70,7 +77,7 @@ async def couchdb_with_user_access(couchdb_user_account):
 
 
 @pytest.fixture
-async def database(couchdb):
+async def database(couchdb: CouchDB) -> AsyncGenerator[Database, None]:
     database = await couchdb.create("aiocouch_test_fixture_database")
 
     yield database
@@ -79,7 +86,7 @@ async def database(couchdb):
 
 
 @pytest.fixture
-async def filled_database(database):
+async def filled_database(database: Database) -> AsyncGenerator[Database, None]:
     doc = await database.create("foo")
     doc["bar"] = True
     await doc.save()
@@ -100,7 +107,9 @@ async def filled_database(database):
 
 
 @pytest.fixture
-async def filled_database_with_view(filled_database):
+async def filled_database_with_view(
+    filled_database: Database,
+) -> AsyncGenerator[Database, None]:
     ddoc = await filled_database.design_doc("test_ddoc")
     await ddoc.create_view("null_view", "function (doc) { emit(doc._id, null); }")
     await ddoc.create_view("full_view", "function (doc) { emit(doc._id, doc); }")
@@ -110,7 +119,7 @@ async def filled_database_with_view(filled_database):
 
 
 @pytest.fixture
-async def large_filled_database(database):
+async def large_filled_database(database: Database) -> AsyncGenerator[Database, None]:
     async with database.update_docs(
         [f"doc{i}" for i in range(2000)], create=True
     ) as docs:
@@ -121,6 +130,6 @@ async def large_filled_database(database):
 
 
 @pytest.fixture
-async def doc(database):
+async def doc(database: Database) -> AsyncGenerator[Document, None]:
     doc = await database.create("foo")
     yield doc

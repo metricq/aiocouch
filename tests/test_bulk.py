@@ -1,10 +1,12 @@
 import pytest
 
+from aiocouch.database import Database
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 
-async def test_update_docs_on_empty(database):
+async def test_update_docs_on_empty(database: Database) -> None:
     async with database.update_docs([]) as bulk:
         pass
 
@@ -13,7 +15,7 @@ async def test_update_docs_on_empty(database):
     assert len(keys) == 0
 
 
-async def test_update_docs_creating(database):
+async def test_update_docs_creating(database: Database) -> None:
     async with database.update_docs(["foobar"], create=True):
         pass
 
@@ -23,13 +25,13 @@ async def test_update_docs_creating(database):
     assert sorted(keys) == ["foobar"]
 
 
-async def test_update_docs_creating_not_ok(database):
+async def test_update_docs_creating_not_ok(database: Database) -> None:
     with pytest.raises(KeyError):
         async with database.update_docs(["foobar"]):
             pass
 
 
-async def test_update_docs(database):
+async def test_update_docs(database: Database) -> None:
     async with database.update_docs(["foo", "baz"], create=True) as docs:
         async for doc in docs:
             doc["llama"] = "awesome"
@@ -44,14 +46,14 @@ async def test_update_docs(database):
         assert doc["llama"] == "awesome"
 
 
-async def test_update_docs_no_change(filled_database):
+async def test_update_docs_no_change(filled_database: Database) -> None:
     async with filled_database.update_docs(["foo", "baz"]) as docs:
         pass
 
     assert docs.status == []
 
 
-async def test_update_dont_crash_on_pristine_doc(filled_database):
+async def test_update_dont_crash_on_pristine_doc(filled_database: Database) -> None:
     doc = await filled_database["foo"]
     doc["llama"] = "awesome"
     await doc.save()
@@ -61,7 +63,7 @@ async def test_update_dont_crash_on_pristine_doc(filled_database):
             doc["llama"] = "awesome"
 
 
-async def test_update_docs_for_deleted(filled_database):
+async def test_update_docs_for_deleted(filled_database: Database) -> None:
     doc = await filled_database["foo"]
     await doc.delete()
 
@@ -77,7 +79,7 @@ async def test_update_docs_for_deleted(filled_database):
     assert doc["llama"] == "awesome"
 
 
-async def test_update_docs_for_errored(filled_database):
+async def test_update_docs_for_errored(filled_database: Database) -> None:
     doc = await filled_database["foo"]
     doc["something"] = 42
     async with filled_database.update_docs(["foo", "baz"]) as docs:
@@ -90,12 +92,14 @@ async def test_update_docs_for_errored(filled_database):
     assert docs.status is not None
     assert len(docs.status) == 2
 
+    assert docs.ok is not None
     assert len(docs.ok) == 1
     doc_ok = docs.ok[0]
     assert doc_ok.id == "baz"
     assert doc_ok["thing"] == 42
     assert doc_ok["_rev"].startswith("2-")
 
+    assert docs.error is not None
     assert len(docs.error) == 1
     doc_err = docs.error[0]
     assert doc_err.id == "foo"
@@ -103,10 +107,11 @@ async def test_update_docs_for_errored(filled_database):
     assert "something" not in doc_err
 
 
-async def test_create_docs_with_ids(database):
+async def test_create_docs_with_ids(database: Database) -> None:
     async with database.create_docs(["foo", "baz"]) as docs:
         pass
 
+    assert docs.status is not None
     assert len(docs.status) == 2
 
     keys = [key async for key in database.akeys()]
@@ -115,11 +120,15 @@ async def test_create_docs_with_ids(database):
     assert sorted(keys) == ["baz", "foo"]
 
 
-async def test_create_docs_with_create(database):
+async def test_create_docs_with_create(database: Database) -> None:
     async with database.create_docs() as docs:
         docs.create("foo", data={"counter": 42})
         docs.create("baz")
 
+        with pytest.raises(ValueError):
+            docs.create("foo")
+
+    assert docs.status is not None
     assert len(docs.status) == 2
 
     keys = [key async for key in database.akeys()]
@@ -132,11 +141,15 @@ async def test_create_docs_with_create(database):
     assert foo["counter"] == 42
 
 
-async def test_create_docs_with_create_duplicate(database):
+async def test_create_docs_with_create_duplicate(database: Database) -> None:
     async with database.create_docs() as docs:
-        docs.create("foo")
-        docs.create("foo")
+        foo = docs.create("foo")
 
+        # DO NOT DO THIS! This is just using the private interface to test conflict handling.
+        assert docs._docs is not None
+        docs._docs.append(foo)
+
+    assert docs.status is not None
     assert len(docs.status) == 2
 
     assert "ok" in docs.status[0]
@@ -149,13 +162,30 @@ async def test_create_docs_with_create_duplicate(database):
     assert sorted(keys) == ["foo"]
 
 
-async def test_create_docs_mixed(database):
+async def test_create_docs_mixed(database: Database) -> None:
     async with database.create_docs(["foo"]) as docs:
         docs.create("baz")
 
+    assert docs.status is not None
     assert len(docs.status) == 2
 
     keys = [key async for key in database.akeys()]
 
     assert len(keys) == 2
     assert sorted(keys) == ["baz", "foo"]
+
+
+async def test_update_external_documents(filled_database: Database) -> None:
+    foo = await filled_database.get("foo")
+
+    assert "zebras" not in foo
+
+    async with filled_database.update_docs() as bulk:
+        foo["zebras"] = "awesome 🦓"
+        bulk.update(foo)
+
+        with pytest.raises(ValueError):
+            bulk.update(foo)
+
+    foo = await filled_database.get("foo")
+    assert foo["zebras"] == "awesome 🦓"

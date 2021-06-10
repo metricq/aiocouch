@@ -28,44 +28,51 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import Any, AsyncGenerator, Dict, Optional, cast
+
 from .document import Document
+from . import database
 
 
 class FindRequestChunk:
-    def __init__(self, database, data, pagination_size):
+    def __init__(
+        self, database: "database.Database", data: Dict[str, Any], pagination_size: int
+    ):
         self.database = database
         self.data = data
         self.pagination_size = pagination_size
 
     @property
-    async def docs(self):
+    async def docs(self) -> AsyncGenerator[Document, None]:
         for res in self.data["docs"]:
             doc = Document(self.database, res["_id"])
             doc._update_cache(res)
             yield doc
 
     @property
-    def bookmark(self):
-        return self.data["bookmark"]
+    def bookmark(self) -> str:
+        return cast(str, self.data["bookmark"])
 
     @property
-    def is_last_chunk(self):
+    def is_last_chunk(self) -> bool:
         return len(self.data["docs"]) < self.pagination_size
 
 
 class FindRequest:
-    def __init__(self, database, selector, limit=None, **params):
+    def __init__(
+        self,
+        database: "database.Database",
+        selector: Any,
+        limit: Optional[int] = None,
+        **params: Any
+    ):
         self.database = database
         self.selector = selector
         self.limit = limit
         self.params = params
 
-    @property
-    def has_limit(self):
-        return self.limit is not None
-
-    async def __aiter__(self):
-        pagination_size = self.limit if self.has_limit else 10000
+    async def __aiter__(self) -> AsyncGenerator[Document, None]:
+        pagination_size = self.limit if self.limit is not None else 10000
 
         while True:
             chunk = FindRequestChunk(
@@ -81,5 +88,5 @@ class FindRequest:
             async for doc in chunk.docs:
                 yield doc
 
-            if self.has_limit or chunk.is_last_chunk:
+            if self.limit is not None or chunk.is_last_chunk:
                 break

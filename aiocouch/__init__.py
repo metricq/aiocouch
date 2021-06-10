@@ -29,6 +29,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .couchdb import CouchDB
+from .database import Database
+from .document import Document
+from .view import View
+
 from .exception import (
     BadRequestError,
     ConflictError,
@@ -42,6 +46,9 @@ from .exception import (
 
 __all__ = [
     "CouchDB",
+    "Database",
+    "Document",
+    "View",
     "BadRequestError",
     "ConflictError",
     "UnauthorizedError",

@@ -28,10 +28,30 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import functools
+from contextlib import suppress
+from typing import Any, Callable, NoReturn, TypeVar, cast, Optional, Type, Dict
+from typing_extensions import Protocol
+
 import aiohttp
 
-from contextlib import suppress
-import functools
+
+class Endpoint(Protocol):
+    @property
+    def id(self) -> str:
+        ...
+
+    @property
+    def endpoint(self) -> str:
+        ...
+
+    @property
+    def _data(self) -> Dict[str, Any]:
+        ...
+
+    @property
+    def _document(self) -> "Endpoint":
+        ...
 
 
 class BadRequestError(ValueError):
@@ -82,7 +102,12 @@ class ExpectationFailedError(ValueError):
     pass
 
 
-def raise_for_endpoint(endpoint, message, exception, exception_type=None):
+def raise_for_endpoint(
+    endpoint: Endpoint,
+    message: str,
+    exception: aiohttp.ClientResponseError,
+    exception_type: Optional[Type[Exception]] = None,
+) -> NoReturn:
     if exception_type is None:
         if exception.status == 400:
             exception_type = BadRequestError
@@ -111,18 +136,23 @@ def raise_for_endpoint(endpoint, message, exception, exception_type=None):
     with suppress(AttributeError):
         message_input["id"] = endpoint.id
         message_input["endpoint"] = endpoint.endpoint
-        message_input["rev"] = endpoint._data.get("_rev")
+        message_input["rev"] = cast(str, endpoint._data.get("_rev"))
     with suppress(AttributeError):
         message_input["document_id"] = endpoint._document.id
-        message_input["document_rev"] = endpoint._document._data.get("_rev")
+        message_input["document_rev"] = cast(str, endpoint._document._data.get("_rev"))
 
     raise exception_type(message.format(**message_input)) from exception
 
 
-def raises(status, message, exception_type=None):
-    def decorator_raises(func):
+FuncT = TypeVar("FuncT", bound=Callable[..., Any])
+
+
+def raises(
+    status: int, message: str, exception_type: Optional[Type[Exception]] = None
+) -> Callable[[FuncT], FuncT]:
+    def decorator_raises(func: FuncT) -> FuncT:
         @functools.wraps(func)
-        async def wrapper(endpoint, *args, **kwargs):
+        async def wrapper(endpoint: Endpoint, *args: Any, **kwargs: Any) -> Any:
             try:
                 return await func(endpoint, *args, **kwargs)
             except aiohttp.ClientResponseError as exception:
@@ -130,6 +160,6 @@ def raises(status, message, exception_type=None):
                     raise_for_endpoint(endpoint, message, exception, exception_type)
                 raise exception
 
-        return wrapper
+        return cast(FuncT, wrapper)
 
     return decorator_raises

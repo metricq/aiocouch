@@ -35,9 +35,28 @@ from .exception import ConflictError, NotFoundError
 from .remote import RemoteDatabase
 from .request import FindRequest
 from .view import AllDocsView, View
+from . import couchdb
 
 from contextlib import suppress
-from typing import List, AsyncGenerator
+from functools import partial
+from typing import (
+    List,
+    AsyncGenerator,
+    AsyncContextManager,
+    Callable,
+    TypeVar,
+    Any,
+    Optional,
+    Dict,
+)
+
+FuncT = TypeVar("FuncT", bound=Callable[..., Any])
+JsonDict = Dict[str, Any]
+
+
+def _returns_async_context_manager(f: FuncT) -> FuncT:
+    setattr(f, "__returns_acontextmanager__", True)
+    return f
 
 
 class Database(RemoteDatabase):
@@ -54,10 +73,10 @@ class Database(RemoteDatabase):
 
     """
 
-    def __init__(self, couchdb, id: str):
+    def __init__(self, couchdb: "couchdb.CouchDB", id: str):
         super().__init__(couchdb._server, id)
 
-    async def akeys(self, **params) -> AsyncGenerator[str, None]:
+    async def akeys(self, **params: Any) -> AsyncGenerator[str, None]:
         """A generator returning the names of all documents in the database
 
         :param params: passed into :meth:`aiohttp.ClientSession.request`
@@ -68,7 +87,7 @@ class Database(RemoteDatabase):
             yield key
 
     async def create(
-        self, id: str, exists_ok: bool = False, data: dict = None
+        self, id: str, exists_ok: bool = False, data: Optional[JsonDict] = None
     ) -> "Document":
         """Returns a local representation of a new document in the database
 
@@ -102,7 +121,7 @@ class Database(RemoteDatabase):
 
         return doc
 
-    async def delete(self):
+    async def delete(self) -> None:
         """Delete the database on the server
 
         Send the request to delete the database and all of its documents.
@@ -112,11 +131,11 @@ class Database(RemoteDatabase):
 
     async def docs(
         self,
-        ids: list = None,
+        ids: Optional[List[str]] = None,
         create: bool = False,
-        prefix: str = None,
+        prefix: Optional[str] = None,
         include_ddocs: bool = False,
-        **params,
+        **params: Any,
     ) -> AsyncGenerator["Document", None]:
         """A generator to iterator over all or a subset of documents in the database.
 
@@ -144,7 +163,7 @@ class Database(RemoteDatabase):
         ):
             yield doc
 
-    async def values(self, **params) -> AsyncGenerator["Document", None]:
+    async def values(self, **params: Any) -> AsyncGenerator["Document", None]:
         """Iterates over documents in the database
 
         See :meth:`~aiocouch.database.Database.docs`.
@@ -161,10 +180,10 @@ class Database(RemoteDatabase):
         """
         return AllDocsView(self)
 
-    def view(self, design_doc, view):
+    def view(self, design_doc: str, view: str) -> View:
         return View(self, design_doc, view)
 
-    async def design_doc(self, id, exists_ok=False):
+    async def design_doc(self, id: str, exists_ok: bool = False) -> DesignDocument:
         ddoc = DesignDocument(self, id)
 
         if exists_ok:
@@ -179,7 +198,7 @@ class Database(RemoteDatabase):
         return ddoc
 
     async def find(
-        self, selector, limit=None, **params
+        self, selector: Any, limit: Optional[int] = None, **params: Any
     ) -> AsyncGenerator["Document", None]:
         """Fetch documents based on search criteria
 
@@ -203,13 +222,35 @@ class Database(RemoteDatabase):
         async for doc in FindRequest(self, selector, limit, **params):
             yield doc
 
-    def update_docs(self, ids, create=False):
+    @_returns_async_context_manager
+    def update_docs(
+        self, ids: List[str] = [], create: bool = False
+    ) -> AsyncContextManager[BulkOperation]:
+        """Update documents in the collection .
+
+        :param ids: [description], defaults to []
+        :type ids: list, optional
+        :param create: [description], defaults to False
+        :type create: bool, optional
+        :return: [description]
+
+        """
         return BulkOperation(self, ids, create)
 
-    def create_docs(self, ids=[]):
+    @_returns_async_context_manager
+    def create_docs(
+        self, ids: List[str] = []
+    ) -> AsyncContextManager[BulkStoreOperation]:
+        """Create a new document in this collection .
+
+        :param ids: [description], defaults to []
+        :type ids: list, optional
+        :return: [description]
+
+        """
         return BulkStoreOperation(self, ids)
 
-    async def __getitem__(self, id: str) -> "Document":
+    async def __getitem__(self, id: str) -> Document:
         """Returns the document with the given id
 
         :raises `~aiocouch.NotFoundError`: if the given document does not exist
@@ -220,7 +261,7 @@ class Database(RemoteDatabase):
         """
         return await self.get(id)
 
-    async def get(self, id: str, default: dict = None):
+    async def get(self, id: str, default: Optional[JsonDict] = None) -> Document:
         """Returns the document with the given id
 
         :raises `~aiocouch.NotFoundError`: if the given document does not exist and
@@ -246,12 +287,12 @@ class Database(RemoteDatabase):
 
         return doc
 
-    async def security(self):
+    async def security(self) -> SecurityDocument:
         doc = SecurityDocument(self)
         await doc.fetch(discard_changes=True)
         return doc
 
-    async def info(self):
+    async def info(self) -> JsonDict:
         """Returns basic information about the database
 
         See also :ref:`GET /db<couchdb:api/db>`.

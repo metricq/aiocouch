@@ -4,7 +4,7 @@ import timeit
 from aiocouch import CouchDB
 
 
-async def main_with():
+async def main_with() -> None:
     async with CouchDB(
         "http://localhost:5984", user="admin", password="admin"
     ) as couchdb:
@@ -27,7 +27,7 @@ async def main_with():
         # async for doc in database.docs(prefix="taurus.taurusi5172."):
         #     print(doc)
 
-        async for key in database.all_docs().akeys(prefix="x"):
+        async for key in database.all_docs.akeys(prefix="x"):
             print(key)
 
         print("------")

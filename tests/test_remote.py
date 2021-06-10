@@ -1,7 +1,8 @@
-def test_stringify_params():
+def test_stringify_params() -> None:
     from aiocouch.remote import _stringify_params
 
     assert _stringify_params(None) is None
+    assert _stringify_params({}) is {}
 
     params = {"foo": "bar", "baz": True, "boo": False, "foz": None}
 

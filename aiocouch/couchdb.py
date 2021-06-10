@@ -28,9 +28,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from types import TracebackType
+from typing import Any, List, Dict, Optional, Type
+
 from .exception import PreconditionFailedError, NotFoundError
 from .database import Database
 from .remote import RemoteServer
+
+JsonDict = Dict[str, Any]
 
 
 class CouchDB:
@@ -46,16 +51,21 @@ class CouchDB:
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         self._server = RemoteServer(*args, **kwargs)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "CouchDB":
         return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         await self.close()
 
-    async def check_credentials(self):
+    async def check_credentials(self) -> None:
         """Check the provided credentials.
 
         :raises ~aiocouch.UnauthorizedError: if provided credentials aren't valid
@@ -63,11 +73,13 @@ class CouchDB:
         """
         await self._server._check_session()
 
-    async def close(self):
+    async def close(self) -> None:
         """Closes the connection to the CouchDB server"""
         await self._server.close()
 
-    async def create(self, id: str, exists_ok: bool = False, **kwargs) -> "Database":
+    async def create(
+        self, id: str, exists_ok: bool = False, **kwargs: Any
+    ) -> "Database":
         """Creates a new database on the server
 
         :raises ~aiocouch.PreconditionFailedError: if the database already
@@ -103,7 +115,7 @@ class CouchDB:
 
         return db
 
-    async def keys(self, **params) -> list:
+    async def keys(self, **params: Any) -> List[str]:
         """Returns all database names
 
         :return: A list containing the names of all databases on the server
@@ -111,7 +123,7 @@ class CouchDB:
         """
         return await self._server._all_dbs(**params)
 
-    async def info(self) -> dict:
+    async def info(self) -> JsonDict:
         """Returns the meta information about the connected CouchDB server.
 
         See also :ref:`GET /<couchdb:api/server/root>`

@@ -3,7 +3,7 @@ import asyncio
 from aiocouch import CouchDB
 
 
-async def main():
+async def main() -> None:
     async with CouchDB(
         "http://localhost:5984", user="admin", password="admin"
     ) as couchdb:
@@ -11,7 +11,8 @@ async def main():
         elapsed_time = 0
 
         while True:
-            result = await couchdb._server._get("/_session")
+            _, result = await couchdb._server._get("/_session")
+            assert not isinstance(result, bytes)
             user = result["userCtx"]["name"]
             print(f"After {elapsed_time} sec: {user}")
 

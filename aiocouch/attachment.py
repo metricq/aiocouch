@@ -26,6 +26,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import cast
+
 from .remote import RemoteAttachment
 
 
@@ -51,7 +53,7 @@ class Attachment(RemoteAttachment):
         """
         return await self._exists()
 
-    async def fetch(self) -> dict:
+    async def fetch(self) -> bytes:
         """Returns the content of the attachment
 
         :return: the attachment content
@@ -59,7 +61,7 @@ class Attachment(RemoteAttachment):
         """
         return await self._get()
 
-    async def save(self, data: dict, content_type: str):
+    async def save(self, data: bytes, content_type: str) -> None:
         """Saves the given attachment content on the server
 
         :param data: the content of the attachment
@@ -71,16 +73,16 @@ class Attachment(RemoteAttachment):
         # Parent document needs to have '_attachments' and '_rev' updated:
         await self._document.fetch()
 
-    async def delete(self):
+    async def delete(self) -> None:
         """Deletes the attachment from the server"""
         await self._delete(await self._get_doc_rev())
         # Parent document needs to have '_attachments' and '_rev' updated
         await self._document.fetch()
 
-    async def _get_doc_rev(self):
+    async def _get_doc_rev(self) -> str:
         if not self._document.exists:
             raise ValueError(
                 "The document must be fetched or saved before updating attachments"
             )
 
-        return self._document["_rev"]
+        return cast(str, self._document["_rev"])

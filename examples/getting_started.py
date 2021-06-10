@@ -3,7 +3,7 @@ import asyncio
 from aiocouch import CouchDB
 
 
-async def main_with():
+async def main_with() -> None:
     async with CouchDB(
         "http://localhost:5984", user="admin", password="admin"
     ) as couchdb:

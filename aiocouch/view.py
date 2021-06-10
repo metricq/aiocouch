@@ -28,32 +28,46 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, cast
+
+from . import database
 from .document import Document
 from .exception import NotFoundError
 from .remote import RemoteView
 
+JsonDict = Dict[str, Any]
+
 
 class View(RemoteView):
-    def __init__(self, database, design_doc, id):
+    def __init__(
+        self, database: "database.Database", design_doc: Optional[str], id: str
+    ):
         super().__init__(database, design_doc, id)
 
     @property
-    def prefix_sentinal(self):
+    def prefix_sentinal(self) -> str:
         return "\uffff"
 
-    async def get(self, **params):
+    async def get(self, **params: Any) -> AsyncGenerator[JsonDict, None]:
         result_chunk = await self._get(**params)
 
         for res in result_chunk["rows"]:
             yield res
 
-    async def post(self, ids, create=False, **params):
+    async def post(
+        self, ids: List[str], create: bool = False, **params: Any
+    ) -> AsyncGenerator[JsonDict, None]:
         result_chunk = await self._post(ids, **params)
 
         for res in result_chunk["rows"]:
             yield res
 
-    async def ids(self, keys=None, prefix=None, **params):
+    async def ids(
+        self,
+        keys: Optional[List[str]] = None,
+        prefix: Optional[str] = None,
+        **params: Any,
+    ) -> AsyncGenerator[str, None]:
         if prefix is not None:
             params["startkey"] = f'"{prefix}"'
             params["endkey"] = f'"{prefix}{self.prefix_sentinal}"'
@@ -67,21 +81,26 @@ class View(RemoteView):
                 if "error" not in res:
                     yield res["id"]
 
-    async def akeys(self, **params):
+    async def akeys(self, **params: Any) -> AsyncGenerator[str, None]:
         async for res in self.get(**params):
             yield res["key"]
 
-    async def aitems(self, **params):
+    async def aitems(self, **params: Any) -> AsyncGenerator[Tuple[str, Any], None]:
         async for res in self.get(**params):
-            yield res["key"], res["value"]
+            yield cast(str, res["key"]), res["value"]
 
-    async def avalues(self, **params):
+    async def avalues(self, **params: Any) -> AsyncGenerator[Any, None]:
         async for res in self.get(**params):
             yield res["value"]
 
     async def docs(
-        self, ids=None, create=False, prefix=None, include_ddocs=False, **params
-    ):
+        self,
+        ids: Optional[List[str]] = None,
+        create: bool = False,
+        prefix: Optional[str] = None,
+        include_ddocs: bool = False,
+        **params: Any,
+    ) -> AsyncGenerator[Document, None]:
         params["include_docs"] = True
         if prefix is None:
             if ids is None:
@@ -117,13 +136,13 @@ class View(RemoteView):
 
 
 class AllDocsView(View):
-    def __init__(self, database):
+    def __init__(self, database: "database.Database"):
         super().__init__(database, None, "_all_docs")
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> str:
         return f"/{self._database.id}/_all_docs"
 
     @property
-    def prefix_sentinal(self):
+    def prefix_sentinal(self) -> str:
         return chr(0x10FFFE)

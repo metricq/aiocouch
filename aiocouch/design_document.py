@@ -28,6 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import Any, Optional
+
 from .document import Document
 from .exception import ConflictError
 from .remote import _quote_id
@@ -48,21 +50,25 @@ class DesignDocument(Document):
     ]
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> str:
         return f"{self._database.endpoint}/_design/{_quote_id(self.id)}"
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         if key in self._allowed_keys:
             super().__setitem__(key, value)
         else:
             raise KeyError(f"The key '{key}' is not allowed in an design document.")
 
-    def view(self, view):
+    def view(self, view: str) -> View:
         return View(self._database, self.id, view)
 
     async def create_view(
-        self, view, map_function, reduce_function=None, exists_ok=False
-    ):
+        self,
+        view: str,
+        map_function: str,
+        reduce_function: Optional[str] = None,
+        exists_ok: bool = False,
+    ) -> View:
         if "views" not in self:
             self["views"] = {}
 

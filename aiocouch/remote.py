@@ -28,19 +28,25 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .exception import raises, NotFoundError
-
 import asyncio
-import aiohttp
-
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import quote
 
+import aiohttp
 
-def _quote_id(id):
-    return quote(id, safe=[])
+from .exception import NotFoundError, raises
+from . import database
+from . import document
+
+JsonDict = Dict[str, Any]
+RequestResult = Tuple[JsonDict, Union[bytes, JsonDict]]
 
 
-def _stringify_params(params):
+def _quote_id(id: str) -> str:
+    return quote(id, safe="")
+
+
+def _stringify_params(params: Optional[JsonDict]) -> Optional[JsonDict]:
     if params is None:
         return None
     result = {}
@@ -58,23 +64,43 @@ def _stringify_params(params):
 
 
 class RemoteServer:
-    def __init__(self, server, user=None, password=None, cookie=None, **kwargs):
+    def __init__(
+        self,
+        server: str,
+        user: Optional[str] = None,
+        password: Optional[str] = None,
+        cookie: Optional[str] = None,
+        **kwargs: Any,
+    ):
         self._server = server
-        auth = aiohttp.BasicAuth(user, password) if user else None
+        auth = aiohttp.BasicAuth(user, password) if user and password else None
         headers = {"Cookie": "AuthSession=" + cookie} if cookie else None
         self._http_session = aiohttp.ClientSession(headers=headers, auth=auth, **kwargs)
-        self._databases = {}
+        # self._databases = {}
 
-    async def _get(self, path, params=None):
+    async def _get(self, path: str, params: Optional[JsonDict] = None) -> RequestResult:
         return await self._request("GET", path, params=params)
 
-    async def _get_bytes(self, path, params=None):
+    async def _get_bytes(
+        self, path: str, params: Optional[JsonDict] = None
+    ) -> RequestResult:
         return await self._request("GET", path, params=params, return_json=False)
 
-    async def _put(self, path, data=None, params=None):
+    async def _put(
+        self,
+        path: str,
+        data: Optional[JsonDict] = None,
+        params: Optional[JsonDict] = None,
+    ) -> RequestResult:
         return await self._request("PUT", path, json=data, params=params)
 
-    async def _put_bytes(self, path, data, content_type, params=None):
+    async def _put_bytes(
+        self,
+        path: str,
+        data: bytes,
+        content_type: str,
+        params: Optional[JsonDict] = None,
+    ) -> RequestResult:
         return await self._request(
             "PUT",
             path,
@@ -83,37 +109,48 @@ class RemoteServer:
             headers={"Content-Type": content_type},
         )
 
-    async def _post(self, path, data, params=None):
+    async def _post(
+        self, path: str, data: JsonDict, params: Optional[JsonDict] = None
+    ) -> RequestResult:
         return await self._request("POST", path, json=data, params=params)
 
-    async def _delete(self, path, params=None):
+    async def _delete(
+        self, path: str, params: Optional[JsonDict] = None
+    ) -> RequestResult:
         return await self._request("DELETE", path, params=params)
 
-    async def _head(self, path, params=None):
+    async def _head(
+        self, path: str, params: Optional[JsonDict] = None
+    ) -> RequestResult:
         return await self._request("HEAD", path, params=params)
 
     async def _request(
         self,
-        method,
-        path,
-        params,
-        return_json=True,
-        **kwargs,
-    ):
-        kwargs["params"] = _stringify_params(params)
+        method: str,
+        path: str,
+        params: Optional[JsonDict] = None,
+        return_json: bool = True,
+        **kwargs: Any,
+    ) -> RequestResult:
+        kwargs["params"] = _stringify_params(params) if params else {}
 
         async with self._http_session.request(
             method, url=f"{self._server}{path}", **kwargs
         ) as resp:
             resp.raise_for_status()
-            return resp.headers, await resp.json() if return_json else await resp.read()
+            return (
+                cast(JsonDict, resp.headers),
+                await resp.json() if return_json else await resp.read(),
+            )
 
     @raises(401, "Invalid credentials")
-    async def _all_dbs(self, **params):
+    async def _all_dbs(self, **params: Any) -> List[str]:
         _, json = await self._get("/_all_dbs", params)
-        return json
+        assert not isinstance(json, bytes)
+        assert isinstance(json, List)
+        return cast(List[str], json)
 
-    async def close(self):
+    async def close(self) -> None:
         # If ClientSession has TLS/SSL connections, it is needed to wait 250 ms
         # before closing, see https://github.com/aio-libs/aiohttp/issues/1925.
         has_ssl_conn = self._http_session.connector and any(
@@ -124,27 +161,28 @@ class RemoteServer:
         await asyncio.sleep(0.250 if has_ssl_conn else 0)
 
     @raises(401, "Invalid credentials")
-    async def _info(self):
+    async def _info(self) -> JsonDict:
         _, json = await self._get("/")
+        assert not isinstance(json, bytes)
         return json
 
     @raises(401, "Authentification failed, check provided credentials.")
-    async def _check_session(self):
+    async def _check_session(self) -> RequestResult:
         return await self._get("/_session")
 
 
 class RemoteDatabase:
-    def __init__(self, remote, id):
+    def __init__(self, remote: RemoteServer, id: str):
         self.id = id
         self._remote = remote
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> str:
         return f"/{_quote_id(self.id)}"
 
     @raises(401, "Invalid credentials")
     @raises(403, "Read permission required")
-    async def _exists(self):
+    async def _exists(self) -> bool:
         try:
             await self._remote._head(self.endpoint)
             return True
@@ -157,21 +195,23 @@ class RemoteDatabase:
     @raises(401, "Invalid credentials")
     @raises(403, "Read permission required")
     @raises(404, "Requested database not found ({id})")
-    async def _get(self):
+    async def _get(self) -> JsonDict:
         _, json = await self._remote._get(self.endpoint)
+        assert not isinstance(json, bytes)
         return json
 
     @raises(400, "Invalid database name")
     @raises(401, "CouchDB Server Administrator privileges required")
     @raises(412, "Database already exists")
-    async def _put(self, **params):
+    async def _put(self, **params: Any) -> JsonDict:
         _, json = await self._remote._put(self.endpoint)
+        assert not isinstance(json, bytes)
         return json
 
     @raises(400, "Invalid database name or forgotten document id by accident")
     @raises(401, "CouchDB Server Administrator privileges required")
     @raises(404, "Database doesn’t exist or invalid database name ({id})")
-    async def _delete(self):
+    async def _delete(self) -> None:
         await self._remote._delete(self.endpoint)
 
     @raises(400, "The request provided invalid JSON data or invalid query parameter")
@@ -179,66 +219,73 @@ class RemoteDatabase:
     @raises(403, "Read permission required")
     @raises(404, "Invalid database name")
     @raises(415, "Bad Content-Type value")
-    async def _bulk_get(self, docs, **params):
+    async def _bulk_get(self, docs: List[str], **params: Any) -> JsonDict:
         _, json = await self._remote._post(
             f"{self.endpoint}/_bulk_get", {"docs": docs}, params
         )
+        assert not isinstance(json, bytes)
         return json
 
     @raises(400, "The request provided invalid JSON data")
     @raises(401, "Invalid credentials")
     @raises(403, "Write permission required")
     @raises(417, "At least one document was rejected by the validation function")
-    async def _bulk_docs(self, docs, **data):
+    async def _bulk_docs(self, docs: List[JsonDict], **data: Any) -> JsonDict:
         data["docs"] = docs
         _, json = await self._remote._post(f"{self.endpoint}/_bulk_docs", data)
+        assert not isinstance(json, bytes)
         return json
 
     @raises(400, "Invalid request")
     @raises(401, "Read privilege required for document '{id}'")
     @raises(403, "Read permission required")
     @raises(500, "Query execution failed", RuntimeError)
-    async def _find(self, selector, **data):
+    async def _find(self, selector: Any, **data: Any) -> JsonDict:
         data["selector"] = selector
         _, json = await self._remote._post(f"{self.endpoint}/_find", data)
+        assert not isinstance(json, bytes)
         return json
 
     @raises(401, "Invalid credentials")
     @raises(403, "Permission required")
-    async def _get_security(self):
+    async def _get_security(self) -> JsonDict:
         _, json = await self._remote._get(f"{self.endpoint}/_security")
+        assert not isinstance(json, bytes)
         return json
 
     @raises(401, "Invalid credentials")
     @raises(403, "Permission required")
-    async def _put_security(self, doc):
+    async def _put_security(self, doc: JsonDict) -> JsonDict:
         _, json = await self._remote._put(f"{self.endpoint}/_security", doc)
+        assert not isinstance(json, bytes)
         return json
 
 
 class RemoteDocument:
-    def __init__(self, database, id):
+    def __init__(self, database: "database.Database", id: str):
         self._database = database
         self.id = id
+        self._data: Optional[JsonDict] = None
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> str:
         return f"{self._database.endpoint}/{_quote_id(self.id)}"
 
     @raises(401, "Read privilege required for document '{id}'")
     @raises(403, "Read privilege required for document '{id}'")
     @raises(404, "Document {id} was not found")
-    async def _head(self):
+    async def _head(self) -> None:
         await self._database._remote._head(self.endpoint)
 
     @raises(401, "Read privilege required for document '{id}'")
     @raises(403, "Read privilege required for document '{id}'")
     @raises(404, "Document {id} was not found")
-    async def _info(self):
+    async def _info(self) -> JsonDict:
         headers, _ = await self._database._remote._head(self.endpoint)
+        assert self._data is not None
         return {"ok": True, "id": self._data["_id"], "rev": headers["Etag"][1:-1]}
 
-    async def _exists(self):
+    async def _exists(self) -> bool:
         try:
             await self._head()
             return True
@@ -249,8 +296,9 @@ class RemoteDocument:
     @raises(401, "Read privilege required for document '{id}'")
     @raises(403, "Read privilege required for document '{id}'")
     @raises(404, "Document {id} was not found")
-    async def _get(self, **params):
+    async def _get(self, **params: Any) -> JsonDict:
         _, json = await self._database._remote._get(self.endpoint, params)
+        assert not isinstance(json, bytes)
         return json
 
     @raises(400, "The format of the request or revision was invalid")
@@ -262,8 +310,9 @@ class RemoteDocument:
         "Document with the specified ID ({id}) already exists or specified revision "
         "{rev} is not latest for target document",
     )
-    async def _put(self, data, **params):
+    async def _put(self, data: JsonDict, **params: Any) -> JsonDict:
         _, json = await self._database._remote._put(self.endpoint, data, params)
+        assert not isinstance(json, bytes)
         return json
 
     @raises(400, "Invalid request body or parameters")
@@ -273,9 +322,10 @@ class RemoteDocument:
     @raises(
         409, "Specified revision ({rev}) is not the latest for target document '{id}'"
     )
-    async def _delete(self, rev, **params):
+    async def _delete(self, rev: str, **params: Any) -> JsonDict:
         params["rev"] = rev
         _, json = await self._database._remote._delete(self.endpoint, params)
+        assert not isinstance(json, bytes)
         return json
 
     @raises(400, "Invalid request body or parameters")
@@ -289,28 +339,29 @@ class RemoteDocument:
         "Document with the specified ID already exists or specified revision is not "
         "latest for target document",
     )
-    async def _copy(self, destination, **params):
+    async def _copy(self, destination: str, **params: Any) -> JsonDict:
         _, json = await self._database._remote._request(
             "COPY", self.endpoint, params=params, headers={"Destination": destination}
         )
+        assert not isinstance(json, bytes)
         return json
 
 
 class RemoteAttachment:
-    def __init__(self, document, id):
+    def __init__(self, document: "document.Document", id: str):
         self._document = document
         self.id = id
-        self.content_type = None
+        self.content_type: Optional[str] = None
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> str:
         return f"{self._document.endpoint}/{_quote_id(self.id)}"
 
     @raises(401, "Read privilege required for document '{document_id}'")
     @raises(403, "Read privilege required for document '{document_id}'")
-    async def _exists(self):
+    async def _exists(self) -> bool:
         try:
-            headers = await self._document._database._remote._head(self.endpoint)
+            headers, _ = await self._document._database._remote._head(self.endpoint)
             self.content_type = headers["Content-Type"]
             return True
         except aiohttp.ClientResponseError as e:
@@ -323,11 +374,12 @@ class RemoteAttachment:
     @raises(401, "Read privilege required for document '{document_id}'")
     @raises(403, "Read privilege required for document '{document_id}'")
     @raises(404, "Document '{document_id}' or attachment '{id}' doesn’t exists")
-    async def _get(self, **params):
+    async def _get(self, **params: Any) -> bytes:
         headers, data = await self._document._database._remote._get_bytes(
             self.endpoint, params
         )
         self.content_type = headers["Content-Type"]
+        assert isinstance(data, bytes)
         return data
 
     @raises(400, "Invalid request body or parameters")
@@ -337,12 +389,15 @@ class RemoteAttachment:
     @raises(
         409, "Specified revision {document_rev} is not the latest for target document"
     )
-    async def _put(self, rev, data, content_type, **params):
+    async def _put(
+        self, rev: str, data: bytes, content_type: str, **params: Any
+    ) -> JsonDict:
         params["rev"] = rev
         _, json = await self._document._database._remote._put_bytes(
             self.endpoint, data, content_type, params
         )
         self.content_type = content_type
+        assert not isinstance(json, bytes)
         return json
 
     @raises(400, "Invalid request body or parameters")
@@ -352,21 +407,23 @@ class RemoteAttachment:
     @raises(
         409, "Specified revision {document_rev} is not the latest for target document"
     )
-    async def _delete(self, rev, **params):
+    async def _delete(self, rev: str, **params: Any) -> JsonDict:
         params["rev"] = rev
         _, json = await self._document._database._remote._delete(self.endpoint, params)
         self.content_type = None
+        assert not isinstance(json, bytes)
         return json
 
 
 class RemoteView:
-    def __init__(self, database, ddoc, id):
+    def __init__(self, database: "database.Database", ddoc: Optional[str], id: str):
         self._database = database
         self.ddoc = ddoc
         self.id = id
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> str:
+        assert self.ddoc is not None
         return (
             f"{self._database.endpoint}/_design/{_quote_id(self.ddoc)}/_view/"
             f"{_quote_id(self.id)}"
@@ -376,16 +433,18 @@ class RemoteView:
     @raises(401, "Read privileges required")
     @raises(403, "Read privileges required")
     @raises(404, "Specified database, design document or view is missing")
-    async def _get(self, **params):
+    async def _get(self, **params: Any) -> JsonDict:
         _, json = await self._database._remote._get(self.endpoint, params)
+        assert not isinstance(json, bytes)
         return json
 
     @raises(400, "Invalid request")
     @raises(401, "Write privileges required")
     @raises(403, "Write privileges required")
     @raises(404, "Specified database, design document or view is missing")
-    async def _post(self, keys, **params):
+    async def _post(self, keys: List[str], **params: Any) -> JsonDict:
         _, json = await self._database._remote._post(
             self.endpoint, {"keys": keys}, params
         )
+        assert not isinstance(json, bytes)
         return json

@@ -23,19 +23,19 @@ image = (
 )
 
 
-async def test_save_text(doc):
+async def test_save_text(doc: Document) -> None:
     await doc.save()
     att = doc.attachment("lipsum.txt")
     await att.save(text, "text/plain")
 
 
-async def test_save_binary(doc):
+async def test_save_binary(doc: Document) -> None:
     await doc.save()
     att = doc.attachment("image.webp")
     await att.save(image, "image/webp")
 
 
-async def test_save_on_unfetched(doc):
+async def test_save_on_unfetched(doc: Document) -> None:
     await doc.save()
 
     new_doc = Document(doc._database, doc["_id"])
@@ -49,7 +49,7 @@ async def test_save_on_unfetched(doc):
     await att.save(text, "text/plain")
 
 
-async def test_get(doc):
+async def test_get(doc: Document) -> None:
     await doc.save()
     await doc.attachment("image.webp").save(image, "image/webp")
 
@@ -59,7 +59,7 @@ async def test_get(doc):
     assert att.content_type == "image/webp"
 
 
-async def test_get_on_unfetched(doc):
+async def test_get_on_unfetched(doc: Document) -> None:
     await doc.save()
     await doc.attachment("image.webp").save(image, "image/webp")
 
@@ -69,7 +69,7 @@ async def test_get_on_unfetched(doc):
     assert data == image
 
 
-async def test_update(doc):
+async def test_update(doc: Document) -> None:
     await doc.save()
 
     doc["value"] = 42
@@ -90,7 +90,7 @@ async def test_update(doc):
     assert await new_doc.attachment("image.webp").fetch() == image
 
 
-async def test_conflict(doc):
+async def test_conflict(doc: Document) -> None:
     await doc.save()
 
     outdated = await doc._database.get(doc["_id"])
@@ -104,7 +104,7 @@ async def test_conflict(doc):
     await doc.attachment("image.webp").save(image, "image/webp")
 
 
-async def test_conflict_on_update(doc):
+async def test_conflict_on_update(doc: Document) -> None:
     await doc.save()
 
     outdated = await doc._database.get(doc["_id"])
@@ -118,7 +118,7 @@ async def test_conflict_on_update(doc):
     await doc.attachment("image.webp").save(image, "image/webp")
 
 
-async def test_delete(doc):
+async def test_delete(doc: Document) -> None:
     await doc.save()
     att = doc.attachment("lipsum.txt")
     await att.save(text, "text/plain")

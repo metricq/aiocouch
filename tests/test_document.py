@@ -1,4 +1,6 @@
 from aiocouch import ConflictError, NotFoundError
+from aiocouch.database import Database
+from aiocouch.document import Document
 
 import pytest
 
@@ -6,7 +8,7 @@ import pytest
 pytestmark = pytest.mark.asyncio
 
 
-async def test_constructor(database):
+async def test_constructor(database: Database) -> None:
     from aiocouch.document import Document
 
     doc = Document(database, "foo", data={"foo": 42})
@@ -16,7 +18,7 @@ async def test_constructor(database):
     assert doc["foo"] == 42
 
 
-async def test_save(database):
+async def test_save(database: Database) -> None:
     doc = await database.create("foo42")
     doc["bar"] = True
     await doc.save()
@@ -27,14 +29,14 @@ async def test_save(database):
     assert len(keys) == 1
 
 
-async def test_fetch_clean_document(filled_database):
+async def test_fetch_clean_document(filled_database: Database) -> None:
     from aiocouch.document import Document
 
     doc = Document(filled_database, "foo")
     await doc.fetch()
 
 
-async def test_fetch_dirty_document(database):
+async def test_fetch_dirty_document(database: Database) -> None:
     from aiocouch import ConflictError
 
     doc = await database.create("foo")
@@ -44,7 +46,7 @@ async def test_fetch_dirty_document(database):
         await doc.fetch()
 
 
-async def test_save_with_data(database):
+async def test_save_with_data(database: Database) -> None:
     doc = await database.create("foo")
 
     doc["blub"] = "blubber"
@@ -52,17 +54,19 @@ async def test_save_with_data(database):
     await doc.save()
 
     assert doc["_id"] == doc.id == "foo"
+    assert doc.rev is not None
     assert doc.rev.startswith("1-")
     assert doc._dirty_cache is False
 
     doc = await database["foo"]
     assert doc["_id"] == doc.id == "foo"
+    assert doc.rev is not None
     assert doc.rev.startswith("1-")
     assert doc["blub"] == "blubber"
     assert doc._dirty_cache is False
 
 
-async def test_conflict(filled_database):
+async def test_conflict(filled_database: Database) -> None:
     doc1 = await filled_database["foo"]
     doc2 = await filled_database["foo"]
 
@@ -75,7 +79,7 @@ async def test_conflict(filled_database):
         await doc2.save()
 
 
-async def test_conflict_without_rev(database):
+async def test_conflict_without_rev(database: Database) -> None:
     doc1 = await database.create("fou")
     doc2 = await database.create("fou")
 
@@ -84,6 +88,7 @@ async def test_conflict_without_rev(database):
     doc1["blub"] = "new"
     await doc1.save()
 
+    assert doc1.rev is not None
     assert doc1.rev.startswith("1-")
     assert doc2.rev is None
 
@@ -95,7 +100,7 @@ async def test_conflict_without_rev(database):
     assert doc2.rev is None
 
 
-async def test_override_conflict(database):
+async def test_override_conflict(database: Database) -> None:
     doc1 = await database.create("fou")
     doc2 = await database.create("fou")
 
@@ -113,11 +118,12 @@ async def test_override_conflict(database):
         await doc2.save()
 
     doc3 = await database["fou"]
+    assert doc3.rev is not None
     assert doc3.rev.startswith("2-")
     assert doc3["blub"] == "bar"
 
 
-async def test_update(filled_database):
+async def test_update(filled_database: Database) -> None:
     doc = await filled_database["foo"]
 
     assert doc.rev == doc["_rev"]
@@ -147,7 +153,7 @@ async def test_update(filled_database):
     assert "bar" not in doc
 
 
-async def test_delete(filled_database):
+async def test_delete(filled_database: Database) -> None:
     doc = await filled_database["foo"]
 
     await doc.delete()
@@ -158,7 +164,7 @@ async def test_delete(filled_database):
     assert sorted(keys) == ["baz", "baz2", "foo2"]
 
 
-async def test_delete_dirty(filled_database):
+async def test_delete_dirty(filled_database: Database) -> None:
     from aiocouch import ConflictError
 
     doc = await filled_database["foo"]
@@ -169,10 +175,13 @@ async def test_delete_dirty(filled_database):
         await doc.delete()
 
 
-async def test_copy(filled_database):
+async def test_copy(filled_database: Database) -> None:
     foo = await filled_database["foo"]
+    assert foo.data is not None
+
     foo_copy = await foo.copy("foo_copy")
 
+    assert foo_copy.data is not None
     assert foo_copy.data.keys() == foo.data.keys()
     for key in foo_copy.data.keys():
         if key == "_id":
@@ -180,7 +189,7 @@ async def test_copy(filled_database):
         assert foo_copy[key] == foo[key]
 
 
-async def test_get_info(database):
+async def test_get_info(database: Database) -> None:
     doc = await database.create("foo42")
     await doc.save()
 
@@ -203,9 +212,11 @@ async def test_get_info(database):
         await doc.info()
 
 
-async def test_rev(doc):
+async def test_rev(doc: Document) -> None:
     assert doc.rev is None
     await doc.save()
+    assert doc.rev is not None
+
     rev = doc.rev
     assert rev.startswith("1-")
     with pytest.raises(TypeError):
@@ -213,7 +224,7 @@ async def test_rev(doc):
     assert doc.rev == rev
 
 
-async def test_doc_update(doc):
+async def test_doc_update(doc: Document) -> None:
     assert "test" not in doc
 
     doc.update({"test": "value"})
@@ -222,13 +233,13 @@ async def test_doc_update(doc):
     assert doc["test"] == "value"
 
 
-async def test_doc_items_keys_values(doc):
+async def test_doc_items_keys_values(doc: Document) -> None:
     assert list(doc.keys()) == ["_id"]
     assert list(doc.values()) == ["foo"]
     assert dict(doc.items()) == {"_id": "foo"}
 
 
-async def test_filled_doc_items_keys_values(doc):
+async def test_filled_doc_items_keys_values(doc: Document) -> None:
     doc.update({"test": "value"})
 
     assert list(doc.keys()) == ["_id", "test"]
@@ -236,7 +247,7 @@ async def test_filled_doc_items_keys_values(doc):
     assert dict(doc.items()) == {"_id": "foo", "test": "value"}
 
 
-async def test_get(doc):
+async def test_get(doc: Document) -> None:
     assert doc.get("foo") is None
     with pytest.raises(KeyError):
         doc["foo"]
@@ -255,11 +266,11 @@ async def test_get(doc):
     assert doc["baz"] == "bar"
 
 
-async def test_repr(doc):
+async def test_repr(doc: Document) -> None:
     print(doc)
 
 
-async def test_cache(doc):
+async def test_cache(doc: Document) -> None:
     assert doc._dirty_cache is True
 
     await doc.save()

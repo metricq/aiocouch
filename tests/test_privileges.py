@@ -1,10 +1,17 @@
+from aiocouch import CouchDB
+from aiocouch.document import Document
+from aiocouch.database import Database
+
+
 import pytest
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 
-async def test_security_missing_privileges(database, couchdb_with_user_access):
+async def test_security_missing_privileges(
+    database: Database, couchdb_with_user_access: CouchDB
+) -> None:
     from aiocouch import ForbiddenError
 
     sec2 = await database.security()
@@ -25,7 +32,9 @@ async def test_security_missing_privileges(database, couchdb_with_user_access):
     await sec.save()
 
 
-async def test_get_missing_privileges(filled_database, couchdb_with_user_access):
+async def test_get_missing_privileges(
+    filled_database: Database, couchdb_with_user_access: CouchDB
+) -> None:
     from aiocouch import ForbiddenError
 
     sec = await filled_database.security()
@@ -36,7 +45,9 @@ async def test_get_missing_privileges(filled_database, couchdb_with_user_access)
         await couchdb_with_user_access["aiocouch_test_fixture_database"]
 
 
-async def test_get_valid_privileges(filled_database, couchdb_with_user_access):
+async def test_get_valid_privileges(
+    filled_database: Database, couchdb_with_user_access: CouchDB
+) -> None:
     from aiocouch import ForbiddenError
 
     sec = await filled_database.security()

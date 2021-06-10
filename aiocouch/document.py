@@ -28,14 +28,18 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .remote import RemoteDocument
-from .exception import ConflictError, ForbiddenError, raises
-from .attachment import Attachment
+import json
+from contextlib import suppress
+from typing import Any, Dict, ItemsView, List, Optional, cast, KeysView, ValuesView
 
 from deprecated import deprecated
 
-from contextlib import suppress
-import json
+from . import database
+from .attachment import Attachment
+from .exception import ConflictError, ForbiddenError, raises
+from .remote import RemoteDocument
+
+JsonDict = Dict[str, Any]
 
 
 class Document(RemoteDocument):
@@ -57,28 +61,30 @@ class Document(RemoteDocument):
 
     """
 
-    def __init__(self, database, id: str, data: dict = None):
+    def __init__(
+        self, database: "database.Database", id: str, data: Optional[JsonDict] = None
+    ):
         super().__init__(database, id)
-        self._data = data if data else {}
+        self._data: JsonDict = data if data is not None else {}
         if not isinstance(self._data, dict):
             raise TypeError("data parameter must be a dict object")
         self._data["_id"] = id
-        self._data_hash = None
+        self._data_hash: Optional[int] = None
 
-    def _update_hash(self):
+    def _update_hash(self) -> None:
         self._data_hash = hash(json.dumps(self._data, sort_keys=True))
 
     @property
-    def _fresh(self):
+    def _fresh(self) -> bool:
         return len(self._data) == 1 and "_id" in self._data
 
     @property
-    def _dirty_cache(self):
+    def _dirty_cache(self) -> bool:
         return self._data_hash is None or self._data_hash != hash(
             json.dumps(self._data, sort_keys=True)
         )
 
-    async def fetch(self, discard_changes: bool = False):
+    async def fetch(self, discard_changes: bool = False) -> None:
         """Retrieves the document data from the server
 
         Fetching the document will retrieve the data from the server using a network
@@ -98,7 +104,7 @@ class Document(RemoteDocument):
             )
         self._update_cache(await self._get())
 
-    async def save(self):
+    async def save(self) -> None:
         """Saves the current state to the CouchDB server
 
         :raises ~aiocouch.ConflictError: if the local revision is different from the
@@ -109,7 +115,7 @@ class Document(RemoteDocument):
             data = await self._put(self._data)
             self._update_rev_after_save(data)
 
-    async def delete(self, discard_changes=False):
+    async def delete(self, discard_changes: bool = False) -> None:
         """Deletes the document from the server
 
         Calling this method deltes the local data and the document on the server.
@@ -142,25 +148,25 @@ class Document(RemoteDocument):
         return await self._database[new_id]
 
     @property
-    def rev(self) -> str:
+    def rev(self) -> Optional[str]:
         """Allows to set and get the local revision
 
         If the local document wasn't fetched or saved, this is ``None``.
 
         """
         try:
-            return self._data["_rev"]
+            return cast(str, self._data["_rev"])
         except KeyError:
             return None
 
     @rev.setter
-    def rev(self, new_rev: str):
+    def rev(self, new_rev: str) -> None:
         if not isinstance(new_rev, str):
             raise TypeError("Revision must be a string.")
         self._data["_rev"] = new_rev
 
     @property
-    def data(self) -> dict:
+    def data(self) -> Optional[JsonDict]:
         """Returns the local copy of the document as a dict
 
         If the document doesn't exist on the server, this function returns ``None``.
@@ -189,10 +195,10 @@ class Document(RemoteDocument):
     @deprecated(
         version="1.1.0", reason="This method is a misnomer. Use info() instead."
     )
-    async def fetch_info(self) -> dict:
+    async def fetch_info(self) -> JsonDict:
         return await self._info()
 
-    async def info(self) -> dict:
+    async def info(self) -> JsonDict:
         """Returns a short information about the document.
 
         This method sends a request to the server to retrieve the current status.
@@ -204,43 +210,43 @@ class Document(RemoteDocument):
         """
         return await self._info()
 
-    def _update_rev_after_save(self, data):
+    def _update_rev_after_save(self, data: JsonDict) -> None:
         with suppress(KeyError):
             self._data["_rev"] = data["rev"]
         self._update_hash()
 
-    def _update_cache(self, new_cache):
+    def _update_cache(self, new_cache: JsonDict) -> None:
         self._data = new_cache
         self._update_hash()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self._data[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         self._data[key] = value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         del self._data[key]
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         return key in self._data
 
-    def update(self, data):
+    def update(self, data: JsonDict) -> None:
         self._data.update(data)
 
-    def items(self):
+    def items(self) -> ItemsView[str, Any]:
         return self._data.items()
 
-    def keys(self):
+    def keys(self) -> KeysView[str]:
         return self._data.keys()
 
-    def values(self):
+    def values(self) -> ValuesView[Any]:
         return self._data.values()
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[Any] = None) -> Any:
         return self._data.get(key, default)
 
-    def setdefault(self, key, default=None):
+    def setdefault(self, key: str, default: Optional[Any] = None) -> Any:
         return self._data.setdefault(key, default)
 
     def attachment(self, id: str) -> "Attachment":
@@ -257,56 +263,56 @@ class Document(RemoteDocument):
         """
         return Attachment(self, id)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return json.dumps(self._data, indent=2)
 
 
 class SecurityDocument(Document):
-    def __init__(self, database):
+    def __init__(self, database: "database.Database"):
         super().__init__(database, "_security")
         del self._data["_id"]
 
     @property
-    def members(self):
+    def members(self) -> Optional[List[str]]:
         try:
-            return self["members"]["names"]
+            return cast(List[str], self["members"]["names"])
         except KeyError:
             return None
 
     @property
-    def member_roles(self):
+    def member_roles(self) -> Optional[List[str]]:
         try:
-            return self["members"]["roles"]
+            return cast(List[str], self["members"]["roles"])
         except KeyError:
             return None
 
     @property
-    def admins(self):
+    def admins(self) -> Optional[List[str]]:
         try:
-            return self["admins"]["names"]
+            return cast(List[str], self["admins"]["names"])
         except KeyError:
             return None
 
     @property
-    def admin_roles(self):
+    def admin_roles(self) -> Optional[List[str]]:
         try:
-            return self["admins"]["roles"]
+            return cast(List[str], self["admins"]["roles"])
         except KeyError:
             return None
 
-    def add_member(self, member):
+    def add_member(self, member: str) -> None:
         members = self.setdefault("members", {})
         names = members.setdefault("names", [])
         if member not in names:
             names.append(member)
 
-    def add_member_role(self, role):
+    def add_member_role(self, role: str) -> None:
         members = self.setdefault("members", {})
         roles = members.setdefault("roles", [])
         if role not in roles:
             roles.append(role)
 
-    def remove_member(self, member):
+    def remove_member(self, member: str) -> None:
         try:
             self["members"]["names"].remove(member)
         except (ValueError, KeyError) as e:
@@ -314,7 +320,7 @@ class SecurityDocument(Document):
                 f"The user '{member}' isn't a member of the database '{self._database.id}'"
             ) from e
 
-    def remove_member_role(self, role):
+    def remove_member_role(self, role: str) -> None:
         try:
             self["members"]["roles"].remove(role)
         except (ValueError, KeyError) as e:
@@ -322,19 +328,19 @@ class SecurityDocument(Document):
                 f"The role '{role}' isn't a member role of the database '{self._database.id}'"
             ) from e
 
-    def add_admin(self, admin):
+    def add_admin(self, admin: str) -> None:
         admins = self.setdefault("admins", {})
         names = admins.setdefault("names", [])
         if admin not in names:
             names.append(admin)
 
-    def add_admin_role(self, role):
+    def add_admin_role(self, role: str) -> None:
         admins = self.setdefault("admins", {})
         roles = admins.setdefault("roles", [])
         if role not in roles:
             roles.append(role)
 
-    def remove_admin(self, admin):
+    def remove_admin(self, admin: str) -> None:
         try:
             self["admins"]["names"].remove(admin)
         except (ValueError, KeyError) as e:
@@ -342,7 +348,7 @@ class SecurityDocument(Document):
                 f"The user '{admin}' isn't an admin of the database '{self._database.id}'"
             ) from e
 
-    def remove_admin_role(self, role):
+    def remove_admin_role(self, role: str) -> None:
         try:
             self["admins"]["roles"].remove(role)
         except (ValueError, KeyError) as e:
@@ -351,5 +357,5 @@ class SecurityDocument(Document):
             ) from e
 
     @raises(500, "You are not a database or server admin", ForbiddenError)
-    async def save(self):
+    async def save(self) -> None:
         await super().save()

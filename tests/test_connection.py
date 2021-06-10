@@ -1,4 +1,8 @@
+from aiocouch import CouchDB
+
 import os
+from contextlib import suppress
+from typing import Optional
 
 import pytest
 
@@ -6,7 +10,7 @@ import pytest
 pytestmark = pytest.mark.asyncio
 
 
-async def test_server_version(event_loop, couchdb):
+async def test_server_version(couchdb: CouchDB) -> None:
     response = await couchdb.info()
 
     from packaging import version
@@ -14,22 +18,24 @@ async def test_server_version(event_loop, couchdb):
     assert version.parse("2.0.0") < version.parse(response["version"])
 
 
-async def test_session(event_loop, couchdb):
+async def test_session(couchdb: CouchDB) -> None:
     headers, response = await couchdb._server._get("/_session")
+
+    assert not isinstance(response, bytes)
 
     assert "ok" in response
     assert "userCtx" in response
     assert "name" in response["userCtx"]
 
-    try:
+    user: Optional[str] = None
+
+    with suppress(KeyError):
         user = os.environ["COUCHDB_USER"]
-    except KeyError:
-        user = None
 
     assert user == response["userCtx"]["name"]
 
 
-async def test_cookie_authentication(event_loop, couchdb_with_user_access):
+async def test_cookie_authentication(couchdb_with_user_access: CouchDB) -> None:
     from aiocouch import CouchDB
 
     import aiohttp
@@ -57,11 +63,11 @@ async def test_cookie_authentication(event_loop, couchdb_with_user_access):
         await couchdb.check_credentials()
 
         headers, response = await couchdb._server._get("/_session")
-
+        assert not isinstance(response, bytes)
         assert user == response["userCtx"]["name"]
 
 
-async def test_basic_authentication(event_loop):
+async def test_basic_authentication() -> None:
     from aiocouch import CouchDB
     import os
 
@@ -70,10 +76,9 @@ async def test_basic_authentication(event_loop):
     except KeyError:
         hostname = "http://localhost:5984"
 
-    try:
+    user: Optional[str] = None
+    with suppress(KeyError):
         user = os.environ["COUCHDB_USER"]
-    except KeyError:
-        user = None
 
     try:
         password = os.environ["COUCHDB_PASS"]
@@ -84,7 +89,7 @@ async def test_basic_authentication(event_loop):
         await couchdb.check_credentials()
 
 
-async def test_with_wrong_credentials(event_loop):
+async def test_with_wrong_credentials() -> None:
     from aiocouch import CouchDB
     from aiocouch import UnauthorizedError
 
@@ -104,7 +109,7 @@ async def test_with_wrong_credentials(event_loop):
             await couchdb["does_not_exist"]
 
 
-async def test_check_wrong_credentials(event_loop):
+async def test_check_wrong_credentials() -> None:
     from aiocouch import CouchDB
     from aiocouch import UnauthorizedError
 
