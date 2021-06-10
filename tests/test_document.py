@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import pytest
 
 from aiocouch import ConflictError, NotFoundError
@@ -16,6 +18,16 @@ async def test_constructor(database: Database) -> None:
     assert doc.id == "foo"
     assert doc["_id"] == "foo"
     assert doc["foo"] == 42
+
+
+async def test_constructor_with_wrong_type_for_data(
+    database: Database, doc: Document
+) -> None:
+    with pytest.raises(TypeError):
+        Document(database, "foo", data=cast(Any, 42))
+
+    with pytest.raises(TypeError):
+        Document(database, "foo", data=cast(Any, doc))
 
 
 async def test_save(database: Database) -> None:

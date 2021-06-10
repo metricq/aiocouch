@@ -54,6 +54,7 @@ async def test_get(doc: Document) -> None:
     await doc.attachment("image.webp").save(image, "image/webp")
 
     att = doc.attachment("image.webp")
+    assert await att.exists()
     data = await att.fetch()
     assert data == image
     assert att.content_type == "image/webp"
