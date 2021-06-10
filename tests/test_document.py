@@ -1,8 +1,8 @@
+import pytest
+
 from aiocouch import ConflictError, NotFoundError
 from aiocouch.database import Database
 from aiocouch.document import Document
-
-import pytest
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
