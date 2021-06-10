@@ -30,7 +30,7 @@ setup(
         "examples": ["aiomonitor", "click", "click-log", "click-completion"],
         "tests": test_deps,
         "docs": ["sphinx", "sphinx-autodoc-typehints", "sphinxcontrib-trio"],
-        "dev": ["mypy", "isort"],
+        "dev": ["mypy", "isort", "black"],
     },
     project_urls={
         "Documentation": "https://aiocouch.readthedocs.io/en/stable",
