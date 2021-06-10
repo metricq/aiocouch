@@ -29,7 +29,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from contextlib import suppress
-from functools import partial
 from typing import (
     Any,
     AsyncContextManager,

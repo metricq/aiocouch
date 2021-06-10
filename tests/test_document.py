@@ -1,8 +1,8 @@
-import pytest
-
 from aiocouch import ConflictError, NotFoundError
 from aiocouch.database import Database
 from aiocouch.document import Document
+
+import pytest
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -113,7 +113,6 @@ async def test_override_conflict(database: Database) -> None:
         await doc2.save()
         assert False
     except ConflictError:
-        info = await doc2.info()
         doc2.rev = doc1.rev
         await doc2.save()
 
