@@ -44,5 +44,6 @@ async def main_persistent() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main_with())
-    asyncio.run(main_persistent())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main_with())
+    loop.run_until_complete(main_persistent())
