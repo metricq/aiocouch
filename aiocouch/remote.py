@@ -119,9 +119,12 @@ class RemoteServer:
         return await self._request("DELETE", path, params=params)
 
     async def _head(
-        self, path: str, params: Optional[JsonDict] = None
+        self,
+        path: str,
+        params: Optional[JsonDict] = None,
+        **kwargs: Any,
     ) -> RequestResult:
-        return await self._request("HEAD", path, params=params)
+        return await self._request("HEAD", path, params=params, **kwargs)
 
     async def _request(
         self,
@@ -360,7 +363,9 @@ class RemoteAttachment:
     @raises(403, "Read privilege required for document '{document_id}'")
     async def _exists(self) -> bool:
         try:
-            headers, _ = await self._document._database._remote._head(self.endpoint)
+            headers, _ = await self._document._database._remote._head(
+                self.endpoint, return_json=False
+            )
             self.content_type = headers["Content-Type"]
             return True
         except aiohttp.ClientResponseError as e:
