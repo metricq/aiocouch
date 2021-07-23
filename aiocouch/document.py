@@ -95,7 +95,8 @@ class Document(RemoteDocument):
         traceback: Optional[TracebackType],
     ) -> None:
         with suppress(ConflictError):
-            await self.save()
+            if exc_type is None:
+                await self.save()
 
     def _update_hash(self) -> None:
         self._data_hash = hash(json.dumps(self._data, sort_keys=True))
