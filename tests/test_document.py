@@ -1,3 +1,4 @@
+from tests.conftest import doc
 from typing import Any, cast
 
 import pytest
@@ -28,6 +29,26 @@ async def test_constructor_with_wrong_type_for_data(
 
     with pytest.raises(TypeError):
         Document(database, "foo", data=cast(Any, doc))
+
+
+async def test_context_manager(database: Database) -> None:
+    from aiocouch.document import Document
+
+    new_doc_id = "new_doc"
+
+    # First test the context manager by creating a new document
+    async with Document(database=database, id=new_doc_id) as document:
+        assert (len(document.keys())) == 1
+        assert document["_id"] == document.id == new_doc_id
+        document["king"] = "elvis"
+
+    # Then test the context manager with the existing document
+    async with Document(database=database, id=new_doc_id) as document:
+        doc_keys = document.keys()
+        assert len(doc_keys) == 3
+        assert document["_id"] == document.id == new_doc_id
+        assert "king" in doc_keys
+        assert document["king"] == "elvis"
 
 
 async def test_save(database: Database) -> None:
@@ -303,3 +324,34 @@ async def test_cache(doc: Document) -> None:
     await doc.save()
 
     assert doc._dirty_cache is False
+
+
+async def test_security_document_context_manager(database: Database) -> None:
+    from aiocouch.document import SecurityDocument
+
+    async with SecurityDocument(database=database) as sec_doc:
+        assert sec_doc.members is None
+        assert sec_doc.admins is None
+
+        assert sec_doc.member_roles is None or sec_doc.member_roles == ["_admin"]
+        assert sec_doc.admin_roles is None or sec_doc.admin_roles == ["_admin"]
+
+        sec_doc.add_member("lennon")
+        sec_doc.add_admin("elvis")
+
+    async with SecurityDocument(database=database) as sec_doc:
+        assert sec_doc.members is not None
+        assert "lennon" in sec_doc.members
+
+        assert sec_doc.admins is not None
+        assert "elvis" in sec_doc.admins
+
+        sec_doc.remove_member(member="lennon")
+        sec_doc.remove_admin(admin="elvis")
+
+    async with SecurityDocument(database=database) as sec_doc:
+        assert sec_doc.members is not None
+        assert "lennon" not in sec_doc.members
+
+        assert sec_doc.admins is not None
+        assert "elvis" not in sec_doc.admins
