@@ -84,8 +84,7 @@ class Document(RemoteDocument):
 
     async def __aenter__(self) -> "Document":
         # Check the remote server whether the document already exists
-        doc_exists = await self._exists()
-        if doc_exists:
+        if await self._exists():
             await self.fetch(discard_changes=True)
         return self
 
