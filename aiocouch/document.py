@@ -47,7 +47,7 @@ from deprecated import deprecated
 
 from . import database
 from .attachment import Attachment
-from .exception import ConflictError, ForbiddenError, raises
+from .exception import ConflictError, ForbiddenError, NotFoundError, raises
 from .remote import RemoteDocument
 
 JsonDict = Dict[str, Any]
@@ -83,9 +83,11 @@ class Document(RemoteDocument):
         self._data_hash: Optional[int] = None
 
     async def __aenter__(self) -> "Document":
-        # Check the remote server whether the document already exists
-        if await self._exists():
+        try:
             await self.fetch(discard_changes=True)
+        except NotFoundError:
+            pass
+
         return self
 
     async def __aexit__(
@@ -94,8 +96,8 @@ class Document(RemoteDocument):
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        with suppress(ConflictError):
-            if exc_type is None:
+        if exc_type is None:
+            with suppress(ConflictError):
                 await self.save()
 
     def _update_hash(self) -> None:
