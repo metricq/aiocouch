@@ -1,4 +1,3 @@
-from tests.conftest import doc
 from typing import Any, cast
 
 import pytest
