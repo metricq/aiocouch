@@ -97,7 +97,11 @@ class Document(RemoteDocument):
         traceback: Optional[TracebackType],
     ) -> None:
         if exc_type is None:
-            with suppress(ConflictError):
+            try:
+                await self.save()
+            except ConflictError:
+                info = await self.info()
+                self.rev = info["rev"]
                 await self.save()
 
     def _update_hash(self) -> None:
@@ -302,7 +306,8 @@ class SecurityDocument(Document):
         del self._data["_id"]
 
     async def __aenter__(self) -> "SecurityDocument":
-        return await super().__aenter__()
+        await self.fetch(discard_changes=True)
+        return self
 
     async def __aexit__(
         self,
@@ -310,7 +315,7 @@ class SecurityDocument(Document):
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        await super().__aexit__(exc_type, exc_value, traceback)
+        await self.save()
 
     @property
     def members(self) -> Optional[List[str]]:
