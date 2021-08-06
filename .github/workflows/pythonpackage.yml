@@ -36,6 +36,8 @@ jobs:
         run: isort --diff --check .
       - name: Format using black
         run: black --check .
+      - name: Run mypy
+        run: mypy --strict aiocouch tests examples
       - name: Test with pytest
         run: |
           python -m pytest --cov-report xml --cov aiocouch
@@ -46,12 +48,6 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           name: Python ${{ matrix.python-version }}
-      - name: Run mypy
-        uses: kolonialno/mypy-action@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-errors: 0
-          paths: aiocouch examples tests
 
   documentation:
     runs-on: ubuntu-latest
