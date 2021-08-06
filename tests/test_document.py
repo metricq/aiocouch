@@ -30,24 +30,73 @@ async def test_constructor_with_wrong_type_for_data(
         Document(database, "foo", data=cast(Any, doc))
 
 
-async def test_context_manager(database: Database) -> None:
+async def test_context_manager_by_creating_new_doc(database: Database) -> None:
     from aiocouch.document import Document
 
     new_doc_id = "new_doc"
 
-    # First test the context manager by creating a new document
+    # Use context manager to create & save new doc with some data in it
     async with Document(database=database, id=new_doc_id) as document:
         assert (len(document.keys())) == 1
         assert document["_id"] == document.id == new_doc_id
         document["king"] = "elvis"
 
-    # Then test the context manager with the existing document
+    # Verify whether the data was actually written to the server or not
+    saved_doc = await database.get(new_doc_id)
+
+    assert saved_doc["_id"] == saved_doc.id == new_doc_id
+    assert saved_doc.rev is not None
+    assert saved_doc.rev.startswith("1-")
+    assert "king" in saved_doc
+    assert saved_doc["king"] == "elvis"
+
+
+async def test_context_manager_by_retrieving_existing_doc(database: Database) -> None:
+    from aiocouch.document import Document
+
+    new_doc_id = "new_doc"
+
+    new_doc = await database.create(new_doc_id)
+    assert new_doc.rev is None
+
+    new_doc["king"] = "elvis"
+
+    await new_doc.save()
+
+    # Test context manager by retrieving existing doc and
+    # Verify that previously saved data was actually written to server
     async with Document(database=database, id=new_doc_id) as document:
         doc_keys = document.keys()
         assert len(doc_keys) == 3
         assert document["_id"] == document.id == new_doc_id
+        assert document["_rev"] == document.rev
         assert "king" in doc_keys
         assert document["king"] == "elvis"
+
+
+async def test_context_manager_with_data_parameter(database: Database) -> None:
+    from aiocouch.document import Document
+
+    new_doc_id = "new_doc"
+
+    doc_data = {"king": "elvis"}
+
+    # Create and save a new document with the data given to data parameter
+    async with Document(database=database, id=new_doc_id, data=doc_data) as document:
+        assert (len(document.keys())) == 2
+        assert document.rev is None
+        assert document["_id"] == document.id == new_doc_id
+        assert "king" in document
+        assert document["king"] == "elvis"
+
+    # Verify that the data was actually written to server by context manager
+    saved_doc = await database.get(new_doc_id)
+
+    assert saved_doc["_id"] == saved_doc.id == new_doc_id
+    assert saved_doc.rev is not None
+    assert saved_doc.rev.startswith("1-")
+    assert "king" in saved_doc
+    assert saved_doc["king"] == "elvis"
 
 
 async def test_save(database: Database) -> None:

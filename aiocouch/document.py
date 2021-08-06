@@ -83,11 +83,8 @@ class Document(RemoteDocument):
         self._data_hash: Optional[int] = None
 
     async def __aenter__(self) -> "Document":
-        try:
+        with suppress(NotFoundError):
             await self.fetch(discard_changes=True)
-        except NotFoundError:
-            pass
-
         return self
 
     async def __aexit__(
@@ -97,12 +94,7 @@ class Document(RemoteDocument):
         traceback: Optional[TracebackType],
     ) -> None:
         if exc_type is None:
-            try:
-                await self.save()
-            except ConflictError:
-                info = await self.info()
-                self.rev = info["rev"]
-                await self.save()
+            await self.save()
 
     def _update_hash(self) -> None:
         self._data_hash = hash(json.dumps(self._data, sort_keys=True))
@@ -306,16 +298,7 @@ class SecurityDocument(Document):
         del self._data["_id"]
 
     async def __aenter__(self) -> "SecurityDocument":
-        await self.fetch(discard_changes=True)
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
-    ) -> None:
-        await self.save()
+        return cast(SecurityDocument, await super().__aenter__())
 
     @property
     def members(self) -> Optional[List[str]]:
