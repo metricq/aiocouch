@@ -51,27 +51,21 @@ async def test_context_manager_by_creating_new_doc(database: Database) -> None:
     assert saved_doc["king"] == "elvis"
 
 
-async def test_context_manager_by_retrieving_existing_doc(database: Database) -> None:
+async def test_context_manager_by_retrieving_existing_doc(
+    filled_database: Database,
+) -> None:
+    """Test async context manager by retrieving an existing doc from
+    filled_database fixture & verify that data was actually written to server"""
+
     from aiocouch.document import Document
 
-    new_doc_id = "new_doc"
-
-    new_doc = await database.create(new_doc_id)
-    assert new_doc.rev is None
-
-    new_doc["king"] = "elvis"
-
-    await new_doc.save()
-
-    # Test context manager by retrieving existing doc and
-    # Verify that previously saved data was actually written to server
-    async with Document(database=database, id=new_doc_id) as document:
+    async with Document(database=filled_database, id="foo") as document:
         doc_keys = document.keys()
         assert len(doc_keys) == 3
-        assert document["_id"] == document.id == new_doc_id
+        assert document["_id"] == document.id == "foo"
         assert document["_rev"] == document.rev
-        assert "king" in doc_keys
-        assert document["king"] == "elvis"
+        assert "bar" in doc_keys
+        assert document["bar"] is True
 
 
 async def test_context_manager_with_data_parameter(database: Database) -> None:

@@ -13,7 +13,7 @@ Create a session with the context manager
 
 .. code-block :: python
 
-    with aiocouch.CouchDB("http://localhost") as couchdb:
+    async with aiocouch.CouchDB("http://localhost") as couchdb:
         await couchdb.check_credentials()
 
 Note that the session will be closed, once the scope of the with statement is left.
