@@ -30,13 +30,24 @@
 
 import json
 from contextlib import suppress
-from typing import Any, Dict, ItemsView, KeysView, List, Optional, ValuesView, cast
+from types import TracebackType
+from typing import (
+    Any,
+    Dict,
+    ItemsView,
+    KeysView,
+    List,
+    Optional,
+    Type,
+    ValuesView,
+    cast,
+)
 
 from deprecated import deprecated
 
 from . import database
 from .attachment import Attachment
-from .exception import ConflictError, ForbiddenError, raises
+from .exception import ConflictError, ForbiddenError, NotFoundError, raises
 from .remote import RemoteDocument
 
 JsonDict = Dict[str, Any]
@@ -70,6 +81,20 @@ class Document(RemoteDocument):
             raise TypeError("data parameter must be a dict object")
         self._data["_id"] = id
         self._data_hash: Optional[int] = None
+
+    async def __aenter__(self) -> "Document":
+        with suppress(NotFoundError):
+            await self.fetch(discard_changes=True)
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        if exc_type is None:
+            await self.save()
 
     def _update_hash(self) -> None:
         self._data_hash = hash(json.dumps(self._data, sort_keys=True))
@@ -271,6 +296,9 @@ class SecurityDocument(Document):
     def __init__(self, database: "database.Database"):
         super().__init__(database, "_security")
         del self._data["_id"]
+
+    async def __aenter__(self) -> "SecurityDocument":
+        return cast(SecurityDocument, await super().__aenter__())
 
     @property
     def members(self) -> Optional[List[str]]:

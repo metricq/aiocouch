@@ -30,6 +30,69 @@ async def test_constructor_with_wrong_type_for_data(
         Document(database, "foo", data=cast(Any, doc))
 
 
+async def test_context_manager_by_creating_new_doc(database: Database) -> None:
+    from aiocouch.document import Document
+
+    new_doc_id = "new_doc"
+
+    # Use context manager to create & save new doc with some data in it
+    async with Document(database=database, id=new_doc_id) as document:
+        assert (len(document.keys())) == 1
+        assert document["_id"] == document.id == new_doc_id
+        document["king"] = "elvis"
+
+    # Verify whether the data was actually written to the server or not
+    saved_doc = await database.get(new_doc_id)
+
+    assert saved_doc["_id"] == saved_doc.id == new_doc_id
+    assert saved_doc.rev is not None
+    assert saved_doc.rev.startswith("1-")
+    assert "king" in saved_doc
+    assert saved_doc["king"] == "elvis"
+
+
+async def test_context_manager_by_retrieving_existing_doc(
+    filled_database: Database,
+) -> None:
+    """Test async context manager by retrieving an existing doc from
+    filled_database fixture & verify that data was actually written to server"""
+
+    from aiocouch.document import Document
+
+    async with Document(database=filled_database, id="foo") as document:
+        doc_keys = document.keys()
+        assert len(doc_keys) == 3
+        assert document["_id"] == document.id == "foo"
+        assert document["_rev"] == document.rev
+        assert "bar" in doc_keys
+        assert document["bar"] is True
+
+
+async def test_context_manager_with_data_parameter(database: Database) -> None:
+    from aiocouch.document import Document
+
+    new_doc_id = "new_doc"
+
+    doc_data = {"king": "elvis"}
+
+    # Create and save a new document with the data given to data parameter
+    async with Document(database=database, id=new_doc_id, data=doc_data) as document:
+        assert (len(document.keys())) == 2
+        assert document.rev is None
+        assert document["_id"] == document.id == new_doc_id
+        assert "king" in document
+        assert document["king"] == "elvis"
+
+    # Verify that the data was actually written to server by context manager
+    saved_doc = await database.get(new_doc_id)
+
+    assert saved_doc["_id"] == saved_doc.id == new_doc_id
+    assert saved_doc.rev is not None
+    assert saved_doc.rev.startswith("1-")
+    assert "king" in saved_doc
+    assert saved_doc["king"] == "elvis"
+
+
 async def test_save(database: Database) -> None:
     doc = await database.create("foo42")
     doc["bar"] = True
@@ -303,3 +366,34 @@ async def test_cache(doc: Document) -> None:
     await doc.save()
 
     assert doc._dirty_cache is False
+
+
+async def test_security_document_context_manager(database: Database) -> None:
+    from aiocouch.document import SecurityDocument
+
+    async with SecurityDocument(database=database) as sec_doc:
+        assert sec_doc.members is None
+        assert sec_doc.admins is None
+
+        assert sec_doc.member_roles is None or sec_doc.member_roles == ["_admin"]
+        assert sec_doc.admin_roles is None or sec_doc.admin_roles == ["_admin"]
+
+        sec_doc.add_member("lennon")
+        sec_doc.add_admin("elvis")
+
+    async with SecurityDocument(database=database) as sec_doc:
+        assert sec_doc.members is not None
+        assert "lennon" in sec_doc.members
+
+        assert sec_doc.admins is not None
+        assert "elvis" in sec_doc.admins
+
+        sec_doc.remove_member(member="lennon")
+        sec_doc.remove_admin(admin="elvis")
+
+    async with SecurityDocument(database=database) as sec_doc:
+        assert sec_doc.members is not None
+        assert "lennon" not in sec_doc.members
+
+        assert sec_doc.admins is not None
+        assert "elvis" not in sec_doc.admins
