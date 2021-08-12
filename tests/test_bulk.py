@@ -1,5 +1,7 @@
+from aiocouch.bulk import BulkOperation
 import pytest
 
+from aiocouch.document import Document
 from aiocouch.database import Database
 
 # All test coroutines will be treated as marked.
@@ -182,10 +184,30 @@ async def test_update_external_documents(filled_database: Database) -> None:
 
     async with filled_database.update_docs() as bulk:
         foo["zebras"] = "awesome 🦓"
-        bulk.update(foo)
+        bulk.append(foo)
 
         with pytest.raises(ValueError):
-            bulk.update(foo)
+            bulk.append(foo)
 
     foo = await filled_database.get("foo")
     assert foo["zebras"] == "awesome 🦓"
+
+async def test_no_bulk_request_on_exception(database: Database, doc: Document) -> None:
+    from aiocouch.bulk import BulkOperation
+
+    doc["zebras"] = "awesome 🦓"
+
+    with pytest.raises(Exception):
+        async with BulkOperation(database=database) as docs:
+            docs.append(doc)
+
+            # simulate an error
+            raise Exception()
+
+    assert docs.error == None
+    assert docs.ok == None
+    assert docs.status == None
+
+    # check that the changes were not send to the server
+    doc2 = await database.create(doc.id)
+    assert "zebras" not in doc2

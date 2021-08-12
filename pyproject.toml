@@ -52,3 +52,10 @@ skip = [
     "env"
 ]
 order_by_type = true
+
+[tool.mypy]
+warn_return_any = true
+warn_no_return = true
+strict_optional = true
+no_implicit_optional = true
+exclude = 'setup.py|\.?.*env|conf.py'

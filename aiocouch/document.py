@@ -133,7 +133,7 @@ class Document(RemoteDocument):
         """Saves the current state to the CouchDB server
 
         :raises ~aiocouch.ConflictError: if the local revision is different from the
-            server. See TODO.
+            server. See `Conflict handling`_.
 
         """
         if self._dirty_cache:
@@ -143,13 +143,13 @@ class Document(RemoteDocument):
     async def delete(self, discard_changes: bool = False) -> None:
         """Deletes the document from the server
 
-        Calling this method deltes the local data and the document on the server.
+        Calling this method deletes the local data and the document on the server.
         Afterwards, the instance can be filled with new data and call :meth:`.save`
         again.
 
         :raises ~aiocouch.ConflictError: if the local data has changed without saving
         :raises ~aiocouch.ConflictError: if the local revision is different from the
-            server. See TODO.
+            server. See `Conflict handling`_.
 
         """
         if self._dirty_cache and not discard_changes:
@@ -220,7 +220,7 @@ class Document(RemoteDocument):
     @deprecated(
         version="1.1.0", reason="This method is a misnomer. Use info() instead."
     )
-    async def fetch_info(self) -> JsonDict:
+    async def fetch_info(self) -> JsonDict: # pragma: no cover
         return await self._info()
 
     async def info(self) -> JsonDict:

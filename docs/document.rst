@@ -38,7 +38,7 @@ of the document. And finally, the local document is saved to the server.
 .. code-block :: python
 
     # get an Document instance
-    doc = await database.create["new_doc"]
+    doc = await database.create("new_doc")
 
     # set the document content
     doc["name"] = "The new document"
@@ -150,7 +150,9 @@ of the document matters.
     with contextlib.suppress(aiocouch.ConflictError):
         await doc.save()
 
-Another straight-forward solution is to override the contents of the existing document.
+Another straight-forward solution is to override the contents of the existing document. Though, 
+this example code isn't a complete solution either, as the second call to
+:meth:`~aiocouch.document.Document.save()` might raise a :class:`~aiocouch.ConflictError` again.
 
 .. code-block :: python
 
