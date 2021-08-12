@@ -38,6 +38,16 @@ JsonDict = Dict[str, Any]
 
 
 class BulkStoreOperation:
+    """A representation of a bulk store operation. This operation allows to
+    write many documents in one request.
+
+    Bulk operations use the :ref:`_bulk_docs<couchdb:api/db/bulk_docs>`
+    endpoint of the database.
+
+    :param database: The database used in the bulk operation
+    :param ids: a list of ids of the involved documents, defaults to []
+    """
+
     def __init__(self, database: "database.Database", ids: List[str] = []):
         self._database = database
         self._ids = ids
@@ -78,22 +88,24 @@ class BulkStoreOperation:
                 self.error.append(doc)
 
     async def __aiter__(self) -> AsyncGenerator[Document, None]:
+        """An iterator that yields Document instances that are part of this bulk operation.
+
+        :return: [description]
+        :rtype: AsyncGenerator[Document, None]
+        :yield: [description]
+        :rtype: Iterator[AsyncGenerator[Document, None]]
+        """
         assert self._docs is not None
         for doc in self._docs:
             yield doc
 
     def create(self, id: str, data: Optional[JsonDict] = None) -> Document:
-        """Creates a Document instance with the given data that will be stored as part of the BulkStoreOperation.
+        """Create a new document as part of the bulk operation
 
-        Args:
-            id (str): the
-            data (Dict, optional): The data of the created Document. Defaults to None.
-
-        Raises:
-            ValueError: If the same document id is already part of the BulkStoreOperation
-
-        Returns:
-            The Document instance representing the document, which can be used to set the contents.
+        :param id: the id of the document
+        :param data: the inital data used to set the body of the document, defaults to None
+        :raises ValueError: if the provided document id is already part of the bulk operation
+        :return: a Document instance reference the newly created document
         """
         assert self._docs is not None
         if any(id == d.id for d in self._docs):
@@ -107,16 +119,11 @@ class BulkStoreOperation:
         return doc
 
     def update(self, doc: Document) -> Document:
-        """Update the passed document as part of the BulkStoreOperation.
+        """Add a document to this batch of store operations.
 
-        Args:
-            doc (Document): The used Document instance
-
-        Raises:
-            ValueError: If the same document id is already part of the BulkStoreOperation
-
-        Returns:
-            the passed Document instance
+        :param doc: the document that should be stored as part of the bulk operation
+        :raises ValueError: if the provided document instance is already part of the bulk operation
+        :return: the provided document
         """
         assert self._docs is not None
         if any(doc.id == d.id for d in self._docs):
@@ -129,6 +136,16 @@ class BulkStoreOperation:
 
 
 class BulkOperation(BulkStoreOperation):
+    """This represents a bulk update of documents. In particular, for every provided
+    id, a :class:`~aiocouch.document.Document` instance gets fetched from the server.
+
+    :param database: The database of the bulk operation
+    :param ids: list of document ids
+    :param create: If ``True``, every document contained in `ids` that doesn't
+            exist, will be represented by an empty
+            :class:`~aiocouch.document.Document` instance.
+    """
+
     def __init__(self, database: "database.Database", ids: List[str], create: bool):
         super().__init__(database=database, ids=ids)
         self._create = create
