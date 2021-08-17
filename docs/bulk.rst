@@ -19,8 +19,8 @@ or not, and sets the key `llama` to `awesome` with one bulk request.
 
 .. code-block :: python
 
-    async with database.update_docs(["foo", "baz"], create=True) as docs:
-        async for doc in docs:
+    async with database.update_docs(["foo", "baz"], create=True) as bulk:
+        async for doc in bulk:
             doc["llama"] = "awesome"
 
 
@@ -32,7 +32,7 @@ of document ids as the `ids` parameter.
 
 .. code-block :: python
 
-    async with database.update_docs(ids=["foo", "baz"]) as docs:
+    async with database.update_docs(ids=["foo", "baz"]) as bulk:
         ...
 
 The second method is the usage of the
@@ -44,8 +44,8 @@ the bulk operation.
 
     the_document = Document(...)
 
-    async with BulkOperation(database=my_database) as docs:
-        docs.append(the_document)
+    async with BulkOperation(database=my_database) as bulk:
+        bulk.append(the_document)
 
 Once the control flow leaves the context, the bulk operation persists the
 applied changes to all documents that there included in the bulk operation one
@@ -62,8 +62,8 @@ one request containing all document contents gets send to the server.
 
 .. code-block :: python
 
-    async with my_database.create_docs(...) as docs:
-        for doc in docs:
+    async with my_database.create_docs(...) as bulk:
+        for doc in bulk:
             # make changes to the Document instances
 
     # the request was send now
@@ -90,8 +90,8 @@ documents whose ids where passed as the `ids` parameter. If you already have
 
     my_doc: Document = ...
 
-    async with my_database.update_docs(...) as docs:
-        docs.append(my_doc)
+    async with my_database.update_docs(...) as bulk:
+        bulk.append(my_doc)
 
         for doc in docs:
             # make changes to the Document instances
@@ -115,13 +115,13 @@ error, it will contain a description of what went wrong.
 
 .. code-block :: python
 
-    async with BulkOperation(database=my_database) as docs:
+    async with BulkOperation(database=my_database) as bulk:
         ...
 
-    if len(docs.error) == 0:
-        print(f"Saved all {len(docs.ok)} documents")
+    if len(bulk.error) == 0:
+        print(f"Saved all {len(bulk.ok)} documents")
     else:
-        print(f"Failed to saved {len(docs.error)} documents")
+        print(f"Failed to saved {len(bulk.error)} documents")
 
 
 Reference
