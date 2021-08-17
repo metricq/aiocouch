@@ -55,24 +55,24 @@ class BulkOperation:
     def __init__(self, database: "database.Database"):
         self._database = database
 
-        self.status: Optional[List[JsonDict]] = None
+        self.response: Optional[List[JsonDict]] = None
         """The resulting JSON response of the :ref:`_bulk_docs<couchdb:api/db/bulk_docs>`
         request. Refer to the CouchDB documentation for the contents.
-        
+
         Only available after the context manager has finished without a
         passing exception."""
 
         self.ok: Optional[List[Document]] = None
         """The list of all :class:`~aiocouch.document.Document` instances that there
         successfully saved to server.
-        
+
         Only available after the context manager has finished without a
         passing exception."""
 
         self.error: Optional[List[Document]] = None
         """The list of all :class:`~aiocouch.document.Document` instances that could not
         be saved to server.
-        
+
         Only available after the context manager has finished without a
         passing exception."""
 
@@ -94,15 +94,15 @@ class BulkOperation:
         docs = [doc._data for doc in self._docs if doc._dirty_cache]
 
         if docs:
-            self.status = cast(List[JsonDict], await self._database._bulk_docs(docs))
+            self.response = cast(List[JsonDict], await self._database._bulk_docs(docs))
         else:
-            self.status = []
+            self.response = []
 
         self.ok = []
         self.error = []
 
         result_docs = [doc for doc in self._docs if doc._dirty_cache]
-        for status, doc in zip(self.status, result_docs):
+        for status, doc in zip(self.response, result_docs):
             assert status["id"] == doc.id
             if "ok" in status:
                 doc._update_rev_after_save(status)
@@ -137,10 +137,16 @@ class BulkOperation:
 
         return doc
 
+    # Mypy isn't smart enough, see: https://github.com/python/mypy/issues/1362
+    @property  # type:ignore
+    @deprecated(version="2.1.0", reason="Use the response property instead.")
+    def status(self) -> Optional[List[JsonDict]]:
+        return self.response
+
     @deprecated(
         version="2.1.0", reason="Use append(doc) instead. It just makes more sense."
     )
-    def update(self, doc: Document) -> Document: # pragma: no cover
+    def update(self, doc: Document) -> Document:  # pragma: no cover
         """Add a document to this bulk operation.
 
         :param doc: the document that should be stored as part of the bulk operation
@@ -197,13 +203,15 @@ class BulkUpdateOperation(BulkOperation):
             :class:`~aiocouch.document.Document` instance.
     """
 
-    def __init__(self, database: "database.Database", ids: List[str] = [], create: bool = False):
+    def __init__(
+        self, database: "database.Database", ids: List[str] = [], create: bool = False
+    ):
         super().__init__(database=database)
         self._ids = ids
         self._create = create
 
     async def __aenter__(self) -> "BulkUpdateOperation":
-        self._docs.extend([
-            doc async for doc in self._database.docs(self._ids, create=self._create)
-        ])
+        self._docs.extend(
+            [doc async for doc in self._database.docs(self._ids, create=self._create)]
+        )
         return self
