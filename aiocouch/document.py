@@ -220,7 +220,7 @@ class Document(RemoteDocument):
     @deprecated(
         version="1.1.0", reason="This method is a misnomer. Use info() instead."
     )
-    async def fetch_info(self) -> JsonDict: # pragma: no cover
+    async def fetch_info(self) -> JsonDict:  # pragma: no cover
         return await self._info()
 
     async def info(self) -> JsonDict:

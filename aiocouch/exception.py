@@ -38,19 +38,19 @@ from typing_extensions import Protocol
 
 class Endpoint(Protocol):
     @property
-    def id(self) -> str: # pragma: no cover
+    def id(self) -> str:  # pragma: no cover
         ...
 
     @property
-    def endpoint(self) -> str: # pragma: no cover
+    def endpoint(self) -> str:  # pragma: no cover
         ...
 
     @property
-    def _data(self) -> Dict[str, Any]: # pragma: no cover
+    def _data(self) -> Dict[str, Any]:  # pragma: no cover
         ...
 
     @property
-    def _document(self) -> "Endpoint": # pragma: no cover
+    def _document(self) -> "Endpoint":  # pragma: no cover
         ...
 
 
