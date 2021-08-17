@@ -53,6 +53,13 @@ skip = [
 ]
 order_by_type = true
 
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = [
+    "tests"
+]
+python_files = 'test_*.py'
+
 [tool.mypy]
 warn_return_any = true
 warn_no_return = true
