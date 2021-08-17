@@ -140,7 +140,7 @@ class BulkOperation:
     # Mypy isn't smart enough, see: https://github.com/python/mypy/issues/1362
     @property  # type:ignore
     @deprecated(version="2.1.0", reason="Use the response property instead.")
-    def status(self) -> Optional[List[JsonDict]]:
+    def status(self) -> Optional[List[JsonDict]]:  # pragma: no cover
         return self.response
 
     @deprecated(
