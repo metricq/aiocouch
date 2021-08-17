@@ -1,8 +1,7 @@
-from aiocouch.bulk import BulkOperation
 import pytest
 
-from aiocouch.document import Document
 from aiocouch.database import Database
+from aiocouch.document import Document
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -52,7 +51,7 @@ async def test_update_docs_no_change(filled_database: Database) -> None:
     async with filled_database.update_docs(["foo", "baz"]) as docs:
         pass
 
-    assert docs.status == []
+    assert docs.response == []
 
 
 async def test_update_dont_crash_on_pristine_doc(filled_database: Database) -> None:
@@ -91,8 +90,8 @@ async def test_update_docs_for_errored(filled_database: Database) -> None:
         async for doc in docs:
             doc["thing"] = 42
 
-    assert docs.status is not None
-    assert len(docs.status) == 2
+    assert docs.response is not None
+    assert len(docs.response) == 2
 
     assert docs.ok is not None
     assert len(docs.ok) == 1
@@ -113,8 +112,8 @@ async def test_create_docs_with_ids(database: Database) -> None:
     async with database.create_docs(["foo", "baz"]) as docs:
         pass
 
-    assert docs.status is not None
-    assert len(docs.status) == 2
+    assert docs.response is not None
+    assert len(docs.response) == 2
 
     keys = [key async for key in database.akeys()]
 
@@ -130,8 +129,8 @@ async def test_create_docs_with_create(database: Database) -> None:
         with pytest.raises(ValueError):
             docs.create("foo")
 
-    assert docs.status is not None
-    assert len(docs.status) == 2
+    assert docs.response is not None
+    assert len(docs.response) == 2
 
     keys = [key async for key in database.akeys()]
 
@@ -151,12 +150,12 @@ async def test_create_docs_with_create_duplicate(database: Database) -> None:
         assert docs._docs is not None
         docs._docs.append(foo)
 
-    assert docs.status is not None
-    assert len(docs.status) == 2
+    assert docs.response is not None
+    assert len(docs.response) == 2
 
-    assert "ok" in docs.status[0]
-    assert "error" in docs.status[1]
-    assert docs.status[1]["error"] == "conflict"
+    assert "ok" in docs.response[0]
+    assert "error" in docs.response[1]
+    assert docs.response[1]["error"] == "conflict"
 
     keys = [key async for key in database.akeys()]
 
@@ -168,13 +167,28 @@ async def test_create_docs_mixed(database: Database) -> None:
     async with database.create_docs(["foo"]) as docs:
         docs.create("baz")
 
-    assert docs.status is not None
-    assert len(docs.status) == 2
+    assert docs.response is not None
+    assert len(docs.response) == 2
 
     keys = [key async for key in database.akeys()]
 
     assert len(keys) == 2
     assert sorted(keys) == ["baz", "foo"]
+
+
+async def test_create_docs_for_existing(filled_database: Database) -> None:
+    async with filled_database.create_docs(["new", "foo"]) as docs:
+        docs.create("baz")
+
+    assert docs.response is not None
+    assert docs.error is not None
+    assert docs.ok is not None
+
+    assert len(docs.response) == 3
+    assert len(docs.ok) == 1
+    assert len(docs.error) == 2
+    assert docs.response[1]["error"] == "conflict"
+    assert docs.response[2]["error"] == "conflict"
 
 
 async def test_update_external_documents(filled_database: Database) -> None:
@@ -192,6 +206,7 @@ async def test_update_external_documents(filled_database: Database) -> None:
     foo = await filled_database.get("foo")
     assert foo["zebras"] == "awesome 🦓"
 
+
 async def test_no_bulk_request_on_exception(database: Database, doc: Document) -> None:
     from aiocouch.bulk import BulkOperation
 
@@ -204,9 +219,9 @@ async def test_no_bulk_request_on_exception(database: Database, doc: Document) -
             # simulate an error
             raise Exception()
 
-    assert docs.error == None
-    assert docs.ok == None
-    assert docs.status == None
+    assert docs.error is None
+    assert docs.ok is None
+    assert docs.response is None
 
     # check that the changes were not send to the server
     doc2 = await database.create(doc.id)
