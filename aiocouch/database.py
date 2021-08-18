@@ -41,7 +41,7 @@ from typing import (
 )
 
 from . import couchdb
-from .bulk import BulkOperation, BulkStoreOperation
+from .bulk import BulkCreateOperation, BulkUpdateOperation
 from .design_document import DesignDocument
 from .document import Document, SecurityDocument
 from .exception import ConflictError, NotFoundError
@@ -171,7 +171,7 @@ class Database(RemoteDatabase):
             yield doc
 
     @property
-    def all_docs(self) -> "AllDocsView":
+    def all_docs(self) -> AllDocsView:
         """Returns the all_docs view of the database
 
         :return: Description of returned object.
@@ -224,30 +224,33 @@ class Database(RemoteDatabase):
     @_returns_async_context_manager
     def update_docs(
         self, ids: List[str] = [], create: bool = False
-    ) -> AsyncContextManager[BulkOperation]:
-        """Update documents in the collection .
+    ) -> AsyncContextManager[BulkUpdateOperation]:
+        """Update documents in bulk.
 
-        :param ids: [description], defaults to []
-        :type ids: list, optional
+        See :ref:`bulk operations`.
+
+        :param ids: list of affected documents, defaults to []
         :param create: [description], defaults to False
-        :type create: bool, optional
-        :return: [description]
+        :return: A context manager for the bulk operation
 
         """
-        return BulkOperation(self, ids, create)
+
+        return BulkUpdateOperation(self, ids, create)
 
     @_returns_async_context_manager
     def create_docs(
         self, ids: List[str] = []
-    ) -> AsyncContextManager[BulkStoreOperation]:
-        """Create a new document in this collection .
+    ) -> AsyncContextManager[BulkCreateOperation]:
+        """Create documents in bulk.
 
-        :param ids: [description], defaults to []
-        :type ids: list, optional
-        :return: [description]
+        See :ref:`bulk operations`.
+
+        :param ids: list of document ids to be created
+        :return: A context manager for the bulk operation
 
         """
-        return BulkStoreOperation(self, ids)
+
+        return BulkCreateOperation(self, ids)
 
     async def __getitem__(self, id: str) -> Document:
         """Returns the document with the given id

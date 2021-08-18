@@ -149,7 +149,6 @@ class RemoteServer:
     async def _all_dbs(self, **params: Any) -> List[str]:
         _, json = await self._get("/_all_dbs", params)
         assert not isinstance(json, bytes)
-        assert isinstance(json, List)
         return cast(List[str], json)
 
     async def close(self) -> None:

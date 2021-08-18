@@ -31,23 +31,54 @@
 from types import TracebackType
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type, cast
 
+from deprecated.sphinx import deprecated
+
 from . import database
 from .document import Document
 
 JsonDict = Dict[str, Any]
 
 
-class BulkStoreOperation:
-    def __init__(self, database: "database.Database", ids: List[str] = []):
-        self._database = database
-        self._ids = ids
-        self.status: Optional[List[JsonDict]] = None
-        self.ok: Optional[List[Document]] = None
-        self.error: Optional[List[Document]] = None
-        self._docs: Optional[List[Document]] = None
+class BulkOperation:
+    """A context manager for bulk operation. This operation allows to
+    write many documents in one request.
 
-    async def __aenter__(self) -> "BulkStoreOperation":
-        self._docs = [Document(self._database, id) for id in self._ids]
+    Bulk operations use the :ref:`_bulk_docs<couchdb:api/db/bulk_docs>`
+    endpoint of the database.
+
+    To populate the list of written documents, use the :meth:`append`
+    method.
+
+    :param database: The database used in the bulk operation
+    """
+
+    def __init__(self, database: "database.Database"):
+        self._database = database
+
+        self.response: Optional[List[JsonDict]] = None
+        """The resulting JSON response of the :ref:`_bulk_docs<couchdb:api/db/bulk_docs>`
+        request. Refer to the CouchDB documentation for the contents.
+
+        Only available after the context manager has finished without a
+        passing exception."""
+
+        self.ok: Optional[List[Document]] = None
+        """The list of all :class:`~aiocouch.document.Document` instances that there
+        successfully saved to server.
+
+        Only available after the context manager has finished without a
+        passing exception."""
+
+        self.error: Optional[List[Document]] = None
+        """The list of all :class:`~aiocouch.document.Document` instances that could not
+        be saved to server.
+
+        Only available after the context manager has finished without a
+        passing exception."""
+
+        self._docs: List[Document] = []
+
+    async def __aenter__(self) -> "BulkOperation":
         return self
 
     async def __aexit__(
@@ -56,20 +87,22 @@ class BulkStoreOperation:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        assert self._docs is not None
+        if exc_type is not None:
+            return
+
         # @VTTI: Yes, we actually need doc._data and not doc.data here
         docs = [doc._data for doc in self._docs if doc._dirty_cache]
 
         if docs:
-            self.status = cast(List[JsonDict], await self._database._bulk_docs(docs))
+            self.response = cast(List[JsonDict], await self._database._bulk_docs(docs))
         else:
-            self.status = []
+            self.response = []
 
         self.ok = []
         self.error = []
 
         result_docs = [doc for doc in self._docs if doc._dirty_cache]
-        for status, doc in zip(self.status, result_docs):
+        for status, doc in zip(self.response, result_docs):
             assert status["id"] == doc.id
             if "ok" in status:
                 doc._update_rev_after_save(status)
@@ -78,24 +111,22 @@ class BulkStoreOperation:
                 self.error.append(doc)
 
     async def __aiter__(self) -> AsyncGenerator[Document, None]:
-        assert self._docs is not None
+        """An iterator that yields Document instances that are part of this bulk operation.
+
+        :return: Every :class:`~aiocouch.document.Document` instance that will be affected by this operation
+        :rtype: AsyncGenerator[Document, None]
+        """
         for doc in self._docs:
             yield doc
 
     def create(self, id: str, data: Optional[JsonDict] = None) -> Document:
-        """Creates a Document instance with the given data that will be stored as part of the BulkStoreOperation.
+        """Create a new document as part of the bulk operation
 
-        Args:
-            id (str): the
-            data (Dict, optional): The data of the created Document. Defaults to None.
-
-        Raises:
-            ValueError: If the same document id is already part of the BulkStoreOperation
-
-        Returns:
-            The Document instance representing the document, which can be used to set the contents.
+        :param id: the id of the document
+        :param data: the inital data used to set the body of the document, defaults to None
+        :raises ValueError: if the provided document id is already part of the bulk operation
+        :return: a Document instance reference the newly created document
         """
-        assert self._docs is not None
         if any(id == d.id for d in self._docs):
             raise ValueError(
                 f"There is already another Document instance for {id} part of the BulkOperation"
@@ -106,19 +137,31 @@ class BulkStoreOperation:
 
         return doc
 
-    def update(self, doc: Document) -> Document:
-        """Update the passed document as part of the BulkStoreOperation.
+    # Mypy isn't smart enough, see: https://github.com/python/mypy/issues/1362
+    @property  # type:ignore
+    @deprecated(version="2.1.0", reason="Use the response property instead.")
+    def status(self) -> Optional[List[JsonDict]]:  # pragma: no cover
+        return self.response
 
-        Args:
-            doc (Document): The used Document instance
+    @deprecated(
+        version="2.1.0", reason="Use append(doc) instead. It just makes more sense."
+    )
+    def update(self, doc: Document) -> Document:  # pragma: no cover
+        """Add a document to this bulk operation.
 
-        Raises:
-            ValueError: If the same document id is already part of the BulkStoreOperation
-
-        Returns:
-            the passed Document instance
+        :param doc: the document that should be stored as part of the bulk operation
+        :raises ValueError: if the provided document instance is already part of the bulk operation
+        :return: the provided document
         """
-        assert self._docs is not None
+        return self.append(doc)
+
+    def append(self, doc: Document) -> Document:
+        """Add a document to this bulk operation.
+
+        :param doc: the document that should be stored as part of the bulk operation
+        :raises ValueError: if the provided document instance is already part of the bulk operation
+        :return: the provided document
+        """
         if any(doc.id == d.id for d in self._docs):
             raise ValueError(
                 f"There is already another Document instance for {doc.id} part of the BulkOperation"
@@ -128,13 +171,47 @@ class BulkStoreOperation:
         return doc
 
 
-class BulkOperation(BulkStoreOperation):
-    def __init__(self, database: "database.Database", ids: List[str], create: bool):
-        super().__init__(database=database, ids=ids)
+class BulkCreateOperation(BulkOperation):
+    """A context manager for bulk creation operations. This operation allows to
+    write many documents in one request.
+
+    Bulk operations use the :ref:`_bulk_docs<couchdb:api/db/bulk_docs>`
+    endpoint of the database.
+
+    :param database: The database used in the bulk operation
+    :param ids: a list of ids of the involved documents, defaults to []
+    """
+
+    def __init__(self, database: "database.Database", ids: List[str] = []):
+        super().__init__(database=database)
+        self._ids = ids
+
+    async def __aenter__(self) -> "BulkCreateOperation":
+        self._docs.extend([Document(self._database, id) for id in self._ids])
+        return self
+
+
+class BulkUpdateOperation(BulkOperation):
+    """A context manager for bulk update of documents. In particular, for every provided
+    id, a :class:`~aiocouch.document.Document` instance is provided. The data is fetched
+    using the :class:`~aiocouch.view.AllDocsView` with a minimal amount of requests.
+
+    :param database: The database of the bulk operation
+    :param ids: list of document ids
+    :param create: If ``True``, every document contained in `ids` that doesn't
+            exist, will be represented by an empty
+            :class:`~aiocouch.document.Document` instance.
+    """
+
+    def __init__(
+        self, database: "database.Database", ids: List[str] = [], create: bool = False
+    ):
+        super().__init__(database=database)
+        self._ids = ids
         self._create = create
 
-    async def __aenter__(self) -> "BulkOperation":
-        self._docs = [
-            doc async for doc in self._database.docs(self._ids, create=self._create)
-        ]
+    async def __aenter__(self) -> "BulkUpdateOperation":
+        self._docs.extend(
+            [doc async for doc in self._database.docs(self._ids, create=self._create)]
+        )
         return self
