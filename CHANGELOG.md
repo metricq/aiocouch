@@ -1,3 +1,9 @@
+# v2.1.0
+
+- Adds context managers for automatic saving of Documents
+- Adds documentation for attachments and bulk operations
+- Adds Mypy typing support
+
 # v2.0.1
 
 - Fixes a crash in bulk operations
