@@ -30,7 +30,18 @@
 
 import functools
 from contextlib import suppress
-from typing import Any, Callable, Dict, NoReturn, Optional, Type, TypeVar, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    NoReturn,
+    Optional,
+    Type,
+    TypeVar,
+    cast,
+)
+import types
 
 import aiohttp
 from typing_extensions import Protocol
@@ -152,13 +163,34 @@ def raises(
 ) -> Callable[[FuncT], FuncT]:
     def decorator_raises(func: FuncT) -> FuncT:
         @functools.wraps(func)
-        async def wrapper(endpoint: Endpoint, *args: Any, **kwargs: Any) -> Any:
-            try:
-                return await func(endpoint, *args, **kwargs)
-            except aiohttp.ClientResponseError as exception:
-                if status == exception.status:
-                    raise_for_endpoint(endpoint, message, exception, exception_type)
-                raise exception
+        def wrapper(endpoint: Endpoint, *args: Any, **kwargs: Any):
+            function_instance = func(endpoint, *args, **kwargs)
+            if isinstance(function_instance, types.AsyncGeneratorType):
+
+                async def inner():
+                    try:
+                        async for data in function_instance:
+                            yield data
+                    except aiohttp.ClientResponseError as exception:
+                        if status == exception.status:
+                            raise_for_endpoint(
+                                endpoint, message, exception, exception_type
+                            )
+                        raise exception
+
+            else:
+
+                async def inner():
+                    try:
+                        return await function_instance
+                    except aiohttp.ClientResponseError as exception:
+                        if status == exception.status:
+                            raise_for_endpoint(
+                                endpoint, message, exception, exception_type
+                            )
+                        raise exception
+
+            return inner()
 
         return cast(FuncT, wrapper)
 

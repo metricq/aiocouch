@@ -34,7 +34,6 @@ from typing import (
     AsyncContextManager,
     AsyncGenerator,
     Callable,
-    Dict,
     List,
     Optional,
     TypeVar,
@@ -45,12 +44,13 @@ from .bulk import BulkCreateOperation, BulkUpdateOperation
 from .design_document import DesignDocument
 from .document import Document, SecurityDocument
 from .exception import ConflictError, NotFoundError
+from .event import BaseChangeEvent, ChangedEvent, DeletedEvent
 from .remote import RemoteDatabase
 from .request import FindRequest
 from .view import AllDocsView, View
+from .typing import JsonDict
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
-JsonDict = Dict[str, Any]
 
 
 def _returns_async_context_manager(f: FuncT) -> FuncT:
@@ -319,3 +319,20 @@ class Database(RemoteDatabase):
 
         """
         return await self._get()
+
+    async def changes(self, **params: Any) -> AsyncGenerator[BaseChangeEvent, None]:
+        params["feed"] = "continuous"
+        params.setdefault("since", "now")
+        params.setdefault("heartbeat", True)
+        async for json in self._changes(**params):
+            if "deleted" in json and json["deleted"] == True:
+                yield DeletedEvent(
+                    id=json["id"], rev=json["changes"][0]["rev"], json=json
+                )
+            else:
+                yield ChangedEvent(
+                    database=self,
+                    id=json["id"],
+                    rev=json["changes"][0]["rev"],
+                    json=json,
+                )

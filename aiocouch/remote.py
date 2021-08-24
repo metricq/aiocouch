@@ -29,15 +29,25 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import asyncio
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from contextlib import suppress
+import json
+from typing import (
+    Any,
+    AsyncGenerator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 from urllib.parse import quote
 
 import aiohttp
 
 from . import database, document
 from .exception import NotFoundError, raises
+from .typing import JsonDict
 
-JsonDict = Dict[str, Any]
 RequestResult = Tuple[JsonDict, Union[bytes, JsonDict]]
 
 
@@ -144,6 +154,26 @@ class RemoteServer:
                 cast(JsonDict, resp.headers),
                 await resp.json() if return_json else await resp.read(),
             )
+
+    async def _streamed_request(
+        self,
+        method: str,
+        path: str,
+        params: Optional[JsonDict] = None,
+        **kwargs: Any,
+    ) -> AsyncGenerator[JsonDict, None]:
+        kwargs["params"] = _stringify_params(params) if params else {}
+        kwargs.setdefault("timeout", aiohttp.ClientTimeout())
+
+        async with self._http_session.request(
+            method, url=f"{self._server}{path}", **kwargs
+        ) as resp:
+            resp.raise_for_status()
+
+            async for line in resp.content:
+                # this should only happen for empty lines
+                with suppress(json.JSONDecodeError):
+                    yield json.loads(line)
 
     @raises(401, "Invalid credentials")
     async def _all_dbs(self, **params: Any) -> List[str]:
@@ -270,6 +300,13 @@ class RemoteDatabase:
         _, json = await self._remote._put(f"{self.endpoint}/_security", doc)
         assert not isinstance(json, bytes)
         return json
+
+    @raises(400, "Invalid request")
+    async def _changes(self, **params: Any) -> AsyncGenerator[JsonDict, None]:
+        async for json in self._remote._streamed_request(
+            "GET", f"{self.endpoint}/_changes", params=params
+        ):
+            yield json
 
 
 class RemoteDocument:

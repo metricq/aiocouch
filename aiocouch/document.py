@@ -49,8 +49,7 @@ from . import database
 from .attachment import Attachment
 from .exception import ConflictError, ForbiddenError, NotFoundError, raises
 from .remote import RemoteDocument
-
-JsonDict = Dict[str, Any]
+from .typing import JsonDict
 
 
 class Document(RemoteDocument):
