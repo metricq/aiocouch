@@ -2,7 +2,6 @@ import asyncio
 import uuid
 
 from aiocouch import CouchDB
-from aiocouch import Database
 from aiocouch.event import ChangedEvent, DeletedEvent
 
 

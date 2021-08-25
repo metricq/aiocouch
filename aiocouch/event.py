@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from . import document
-from . import database
+from . import database as db
 from .typing import JsonDict
 
 from attr import dataclass
@@ -52,13 +52,13 @@ class BaseChangeEvent(Protocol):
 
 @dataclass
 class ChangedEvent:
-    database: "database.Database"
+    database: "db.Database"
     id: str
     rev: str
     json: JsonDict
 
     async def doc(self) -> "document.Document":
-        return await self.database[self.id]
+        return await self.database.get(self.id, rev=self.rev)
 
 
 @dataclass
