@@ -31,16 +31,7 @@
 import json
 from contextlib import suppress
 from types import TracebackType
-from typing import (
-    Any,
-    ItemsView,
-    KeysView,
-    List,
-    Optional,
-    Type,
-    ValuesView,
-    cast,
-)
+from typing import Any, ItemsView, KeysView, List, Optional, Type, ValuesView, cast
 
 from deprecated import deprecated
 
