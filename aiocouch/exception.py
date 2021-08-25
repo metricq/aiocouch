@@ -29,7 +29,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import functools
-import types
 from contextlib import suppress
 from typing import (
     Any,

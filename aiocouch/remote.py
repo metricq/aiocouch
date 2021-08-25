@@ -295,10 +295,10 @@ class RemoteDatabase:
 
     @generator_raises(400, "Invalid request")
     async def _changes(self, **params: Any) -> AsyncGenerator[JsonDict, None]:
-        async for json in self._remote._streamed_request(
+        async for data in self._remote._streamed_request(
             "GET", f"{self.endpoint}/_changes", params=params
         ):
-            yield json
+            yield data
 
 
 class RemoteDocument:

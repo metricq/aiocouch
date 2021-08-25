@@ -331,7 +331,7 @@ class Database(RemoteDatabase):
         params.setdefault("since", "now")
         params.setdefault("heartbeat", True)
         async for json in self._changes(**params):
-            if "deleted" in json and json["deleted"] == True:
+            if "deleted" in json and json["deleted"] is True:
                 yield DeletedEvent(
                     id=json["id"], rev=json["changes"][0]["rev"], json=json
                 )

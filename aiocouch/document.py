@@ -33,7 +33,6 @@ from contextlib import suppress
 from types import TracebackType
 from typing import (
     Any,
-    Dict,
     ItemsView,
     KeysView,
     List,
