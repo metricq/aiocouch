@@ -28,12 +28,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from . import document
-from . import database as db
-from .typing import JsonDict
-
 from attr import dataclass
 from typing_extensions import Protocol
+
+from . import database as db
+from . import document
+from .typing import JsonDict
 
 
 class BaseChangeEvent(Protocol):

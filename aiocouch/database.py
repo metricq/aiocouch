@@ -43,12 +43,12 @@ from . import couchdb
 from .bulk import BulkCreateOperation, BulkUpdateOperation
 from .design_document import DesignDocument
 from .document import Document, SecurityDocument
-from .exception import ConflictError, NotFoundError
 from .event import BaseChangeEvent, ChangedEvent, DeletedEvent
+from .exception import ConflictError, NotFoundError
 from .remote import RemoteDatabase
 from .request import FindRequest
-from .view import AllDocsView, View
 from .typing import JsonDict
+from .view import AllDocsView, View
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 

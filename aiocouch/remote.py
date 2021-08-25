@@ -29,17 +29,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import asyncio
-from contextlib import suppress
 import json
-from typing import (
-    Any,
-    AsyncGenerator,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from contextlib import suppress
+from typing import Any, AsyncGenerator, List, Optional, Tuple, Union, cast
 from urllib.parse import quote
 
 import aiohttp

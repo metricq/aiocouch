@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import functools
+import types
 from contextlib import suppress
 from typing import (
     Any,
@@ -41,7 +42,6 @@ from typing import (
     TypeVar,
     cast,
 )
-import types
 
 import aiohttp
 from typing_extensions import Protocol
