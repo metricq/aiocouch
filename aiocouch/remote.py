@@ -45,7 +45,7 @@ from urllib.parse import quote
 import aiohttp
 
 from . import database, document
-from .exception import NotFoundError, raises
+from .exception import NotFoundError, generator_raises, raises
 from .typing import JsonDict
 
 RequestResult = Tuple[JsonDict, Union[bytes, JsonDict]]
@@ -301,7 +301,7 @@ class RemoteDatabase:
         assert not isinstance(json, bytes)
         return json
 
-    @raises(400, "Invalid request")
+    @generator_raises(400, "Invalid request")
     async def _changes(self, **params: Any) -> AsyncGenerator[JsonDict, None]:
         async for json in self._remote._streamed_request(
             "GET", f"{self.endpoint}/_changes", params=params

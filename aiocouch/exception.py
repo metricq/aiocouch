@@ -163,34 +163,34 @@ def raises(
 ) -> Callable[[FuncT], FuncT]:
     def decorator_raises(func: FuncT) -> FuncT:
         @functools.wraps(func)
-        def wrapper(endpoint: Endpoint, *args: Any, **kwargs: Any):
-            function_instance = func(endpoint, *args, **kwargs)
-            if isinstance(function_instance, types.AsyncGeneratorType):
+        async def wrapper(endpoint: Endpoint, *args: Any, **kwargs: Any) -> Any:
+            try:
+                return await func(endpoint, *args, **kwargs)
+            except aiohttp.ClientResponseError as exception:
+                if status == exception.status:
+                    raise_for_endpoint(endpoint, message, exception, exception_type)
+                raise exception
 
-                async def inner():
-                    try:
-                        async for data in function_instance:
-                            yield data
-                    except aiohttp.ClientResponseError as exception:
-                        if status == exception.status:
-                            raise_for_endpoint(
-                                endpoint, message, exception, exception_type
-                            )
-                        raise exception
+        return cast(FuncT, wrapper)
 
-            else:
+    return decorator_raises
 
-                async def inner():
-                    try:
-                        return await function_instance
-                    except aiohttp.ClientResponseError as exception:
-                        if status == exception.status:
-                            raise_for_endpoint(
-                                endpoint, message, exception, exception_type
-                            )
-                        raise exception
 
-            return inner()
+def generator_raises(
+    status: int, message: str, exception_type: Optional[Type[Exception]] = None
+) -> Callable[[FuncT], FuncT]:
+    def decorator_raises(func: FuncT) -> FuncT:
+        @functools.wraps(func)
+        async def wrapper(
+            endpoint: Endpoint, *args: Any, **kwargs: Any
+        ) -> AsyncGenerator[Any, None]:
+            try:
+                async for data in func(endpoint, *args, **kwargs):
+                    yield data
+            except aiohttp.ClientResponseError as exception:
+                if status == exception.status:
+                    raise_for_endpoint(endpoint, message, exception, exception_type)
+                raise exception
 
         return cast(FuncT, wrapper)
 
