@@ -278,11 +278,15 @@ class Database(RemoteDatabase):
         """
         return await self.get(id)
 
-    async def get(self, id: str, default: Optional[JsonDict] = None) -> Document:
+    async def get(
+        self, id: str, default: Optional[JsonDict] = None, *, rev: Optional[str] = None
+    ) -> Document:
         """Returns the document with the given id
 
         :raises `~aiocouch.NotFoundError`: if the given document does not exist and
             `default` is `None`
+        :raises `~aiocouch.BadRequestError`: if the given rev of the document is
+            invalid or missing
 
 
         :param id: the name of the document
@@ -291,13 +295,15 @@ class Database(RemoteDatabase):
             `default` as its contents, is returned. To create the document on the
             server, :meth:`~aiocouch.document.Document.save` has to be called on the
             returned instance.
+        :param rev: The requested rev of the document. The requested rev might not
+            or not anymore exist on the connected server.
         :return: a local representation of the requested document
 
         """
         doc = Document(self, id, data=default)
 
         try:
-            await doc.fetch(discard_changes=True)
+            await doc.fetch(discard_changes=True, rev=rev)
         except NotFoundError as e:
             if default is None:
                 raise e

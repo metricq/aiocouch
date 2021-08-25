@@ -384,6 +384,24 @@ async def test_cache(doc: Document) -> None:
     assert doc._dirty_cache is False
 
 
+async def test_fetch_rev(filled_database: Database) -> None:
+    doc = await filled_database.get("foo")
+    old_rev = doc.rev
+
+    doc["Zebras"] = "are the best"
+    await doc.save()
+
+    assert doc.rev != old_rev
+
+    await doc.fetch(rev=old_rev)
+
+    assert doc.rev == old_rev
+    assert "Zebras" not in doc
+
+    doc2 = await filled_database.get("foo", rev=old_rev)
+    assert doc.data == doc2.data
+
+
 async def test_security_document_context_manager(database: Database) -> None:
     from aiocouch.document import SecurityDocument
 
