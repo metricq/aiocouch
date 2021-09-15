@@ -264,6 +264,21 @@ async def test_delete_dirty(filled_database: Database) -> None:
     with pytest.raises(ConflictError):
         await doc.delete()
 
+    assert doc.rev
+    assert doc.rev.startswith("1-")
+
+
+async def test_safe_deleted(filled_database: Database) -> None:
+    doc = await filled_database["foo"]
+
+    await doc.delete()
+
+    doc["Zebras"] = "are majestic"
+    await doc.save()
+
+    assert doc.rev
+    assert doc.rev.startswith("3-")
+
 
 async def test_copy(filled_database: Database) -> None:
     foo = await filled_database["foo"]
