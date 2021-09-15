@@ -58,7 +58,15 @@ class ChangedEvent:
     json: JsonDict
 
     async def doc(self) -> "document.Document":
-        return await self.database.get(self.id, rev=self.rev)
+        try:
+            # if in the request include_docs was given, we can create the
+            # document on the spot...
+            return document.Document(
+                self.database, self.json["doc"]["_id"], self.json["doc"]
+            )
+        except KeyError:
+            # ...otherwise, we fetch the document contents from the server
+            return await self.database.get(self.id, rev=self.rev)
 
 
 @dataclass
