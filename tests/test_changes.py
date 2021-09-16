@@ -1,5 +1,5 @@
 import asyncio
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
@@ -11,7 +11,7 @@ from aiocouch.event import BaseChangeEvent, ChangedEvent, DeletedEvent
 pytestmark = pytest.mark.asyncio
 
 
-async def listen_for_first_change(database: Database, **kwargs) -> BaseChangeEvent:
+async def listen_for_first_change(database: Database, **kwargs: Any) -> BaseChangeEvent:
     async for event in database.changes(**kwargs, feed="continuous", since="now"):
         return event
 
