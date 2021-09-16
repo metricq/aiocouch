@@ -1,26 +1,25 @@
 import asyncio
-import pytest
-
 from typing import cast
+
+import pytest
 
 from aiocouch.database import Database
 from aiocouch.document import Document
 from aiocouch.event import BaseChangeEvent, ChangedEvent, DeletedEvent
-
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 
 async def listen_for_first_change(database: Database, **kwargs) -> BaseChangeEvent:
-    async for event in database.changes(**kwargs):
+    async for event in database.changes(**kwargs, feed="continuous", since="now"):
         return event
 
     assert False
 
 
 async def test_changed_event_for_new_document(database: Database) -> None:
-    async def create_doc(database: Database):
+    async def create_doc(database: Database) -> Document:
         await asyncio.sleep(0.1)
         doc = await database.create("foo", data={"Zebras": "are pants"})
         await doc.save()
@@ -45,7 +44,7 @@ async def test_changed_event_for_new_document(database: Database) -> None:
 
 
 async def test_changed_event_for_existing_doc(filled_database: Database) -> None:
-    async def update_doc(doc: Document):
+    async def update_doc(doc: Document) -> None:
         await asyncio.sleep(0.1)
         doc["Zebras"] = "are black with white stripes"
         await doc.save()
@@ -69,7 +68,7 @@ async def test_changed_event_for_existing_doc(filled_database: Database) -> None
 
 
 async def test_deleted_event(filled_database: Database) -> None:
-    async def delete_doc(doc: Document):
+    async def delete_doc(doc: Document) -> None:
         await asyncio.sleep(0.1)
 
         await doc.delete()
@@ -88,7 +87,7 @@ async def test_deleted_event(filled_database: Database) -> None:
 
 
 async def test_changed_event_not_include_docs(filled_database: Database) -> None:
-    async def update_doc(doc: Document):
+    async def update_doc(doc: Document) -> None:
         await asyncio.sleep(0.1)
         doc["Zebras"] = "are black with white stripes"
         await doc.save()
@@ -122,7 +121,7 @@ async def test_changed_event_not_include_docs(filled_database: Database) -> None
 
 
 async def test_changed_event_include_docs(filled_database: Database) -> None:
-    async def update_doc(doc: Document):
+    async def update_doc(doc: Document) -> None:
         await asyncio.sleep(0.1)
         doc["Zebras"] = "are black with white stripes"
         await doc.save()

@@ -12,7 +12,7 @@ async def main_with() -> None:
     ) as couchdb:
         database = await couchdb["test"]
 
-        async for event in database.changes():
+        async for event in database.changes(include_docs=True):
             if isinstance(event, DeletedEvent):
                 print(f"The document {event.id} was deleted.")
             elif isinstance(event, ChangedEvent):

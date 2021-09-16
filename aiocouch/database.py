@@ -327,18 +327,8 @@ class Database(RemoteDatabase):
         return await self._get()
 
     async def changes(self, **params: Any) -> AsyncGenerator[BaseChangeEvent, None]:
-        params["feed"] = "continuous"
-        params.setdefault("since", "now")
-        params.setdefault("heartbeat", True)
         async for json in self._changes(**params):
             if "deleted" in json and json["deleted"] is True:
-                yield DeletedEvent(
-                    id=json["id"], rev=json["changes"][0]["rev"], json=json
-                )
+                yield DeletedEvent(json=json)
             else:
-                yield ChangedEvent(
-                    database=self,
-                    id=json["id"],
-                    rev=json["changes"][0]["rev"],
-                    json=json,
-                )
+                yield ChangedEvent(database=self, json=json)

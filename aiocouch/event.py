@@ -28,34 +28,39 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 from attr import dataclass
-from typing_extensions import Protocol
+from typing import cast
 
 from . import database as db
 from . import document
 from .typing import JsonDict
 
 
-class BaseChangeEvent(Protocol):
+@dataclass
+class BaseChangeEvent:
+    json: JsonDict
+
     @property
     def id(self) -> str:
-        ...
+        return cast(str, self.json["id"])
 
     @property
     def rev(self) -> str:
-        ...
+        return cast(str, self.json["changes"][0]["rev"])
 
     @property
-    def json(self) -> JsonDict:
-        ...
+    def sequence(self) -> str:
+        return cast(str, self.json["seq"])
+
+
+class DeletedEvent(BaseChangeEvent):
+    pass
 
 
 @dataclass
-class ChangedEvent:
+class ChangedEvent(BaseChangeEvent):
     database: "db.Database"
-    id: str
-    rev: str
-    json: JsonDict
 
     async def doc(self) -> "document.Document":
         try:
@@ -67,10 +72,3 @@ class ChangedEvent:
         except KeyError:
             # ...otherwise, we fetch the document contents from the server
             return await self.database.get(self.id, rev=self.rev)
-
-
-@dataclass
-class DeletedEvent:
-    id: str
-    rev: str
-    json: JsonDict

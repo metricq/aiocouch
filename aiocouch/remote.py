@@ -295,10 +295,19 @@ class RemoteDatabase:
 
     @generator_raises(400, "Invalid request")
     async def _changes(self, **params: Any) -> AsyncGenerator[JsonDict, None]:
-        async for data in self._remote._streamed_request(
-            "GET", f"{self.endpoint}/_changes", params=params
-        ):
-            yield data
+        if "feed" in params and params["feed"] == "continuous":
+            params.setdefault("heartbeat", True)
+            async for data in self._remote._streamed_request(
+                "GET", f"{self.endpoint}/_changes", params=params
+            ):
+                yield data
+        else:
+            _, json = await self._remote._get(
+                f"{self.endpoint}/_changes", params=params
+            )
+            assert not isinstance(json, bytes)
+            for result in json["results"]:
+                yield result
 
 
 class RemoteDocument:
