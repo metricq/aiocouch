@@ -29,8 +29,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from attr import dataclass
 from typing import cast
+
+from attr import dataclass
 
 from . import database as db
 from . import document
