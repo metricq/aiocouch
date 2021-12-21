@@ -1,3 +1,9 @@
+# v2.1.1
+
+- Fixes missing module dependency
+- Added Python 3.10 to list of supported python versions
+- CI: Running tests in isolated environment from linting
+
 # v2.1.0
 
 - Adds context managers for automatic saving of Documents
