@@ -105,6 +105,21 @@ async def test_save(database: Database) -> None:
     assert len(keys) == 1
 
 
+async def test_dict_from_doc(filled_database: Database) -> None:
+    doc = await filled_database["foo"]
+
+    doc_as_dict = doc.data
+    assert isinstance(doc_as_dict, dict)
+
+    doc = Document(filled_database, "buzz")
+    doc_as_dict = doc.data
+    assert doc_as_dict is None
+
+    await doc.save()
+    doc_as_dict = doc.data
+    assert isinstance(doc_as_dict, dict)
+
+
 async def test_fetch_clean_document(filled_database: Database) -> None:
     from aiocouch.document import Document
 

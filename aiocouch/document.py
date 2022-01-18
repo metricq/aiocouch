@@ -192,9 +192,9 @@ class Document(RemoteDocument):
 
     @property
     def data(self) -> Optional[JsonDict]:
-        """Returns the local copy of the document as a dict
+        """Returns the document as a dict
 
-        If the document doesn't exist on the server, this function returns ``None``.
+        If :func:`~aiocouch.document.Document.exists` is ``False``, this function returns ``None``.
 
         This method does not perform a network request.
 
@@ -207,8 +207,9 @@ class Document(RemoteDocument):
     def exists(self) -> bool:
         """Denotes whether the document exists
 
-        A document exists, if it was :func:`~aiocouch.document.Document.fetch` ed from
-        the server and wasn't deleted on the server.
+        A document exists, if an existing was :func:`~aiocouch.document.Document.fetch` ed from
+        the server and retrieved data doesn't contain the `_deleted` field. Or a new document
+        was saved using :func:`~aiocouch.document.Document.save`.
 
         This method does not perform a network request.
 
