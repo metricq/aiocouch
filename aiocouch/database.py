@@ -224,11 +224,11 @@ class Database(RemoteDatabase):
     async def index(self, index: JsonDict, **kwargs: Any) -> JsonDict:
         """Create a new index on the database
 
-        This method allows to use the :ref:`_find<couchdb:api/db/_index>`
+        This method allows to use the :ref:`_index<couchdb:api/db/find/index>`
         endpoint of the database.
 
         This method supports all request paramters listed in
-        :ref:`_find<couchdb:api/db/_index>`.
+        :ref:`_index<couchdb:api/db/find/index>`.
 
         :param index: JSON description of the index
         :param kwargs: additional parameters, refer to the CouchDB documentation
