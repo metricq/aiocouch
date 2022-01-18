@@ -17,9 +17,6 @@ async def main_with() -> None:
                 print(f"The document {event.id} was deleted.")
             elif isinstance(event, ChangedEvent):
                 print(f"The document {event.id} was saved as {event.rev}")
-                doc = await event.doc()
-                doc["fluffy"] = str(uuid.uuid1())
-                await doc.save()
 
 
 if __name__ == "__main__":
