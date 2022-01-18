@@ -91,18 +91,22 @@ async def database(couchdb: CouchDB) -> AsyncGenerator[Database, None]:
 async def filled_database(database: Database) -> AsyncGenerator[Database, None]:
     doc = await database.create("foo")
     doc["bar"] = True
+    doc["bar2"] = 3
     await doc.save()
 
     doc = await database.create("foo2")
     doc["bar"] = True
+    doc["bar2"] = 1
     await doc.save()
 
     doc = await database.create("baz")
     doc["bar"] = False
+    doc["bar2"] = 4
     await doc.save()
 
     doc = await database.create("baz2")
     doc["bar"] = True
+    doc["bar2"] = 2
     await doc.save()
 
     yield database

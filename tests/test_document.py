@@ -61,11 +61,12 @@ async def test_context_manager_by_retrieving_existing_doc(
 
     async with Document(database=filled_database, id="foo") as document:
         doc_keys = document.keys()
-        assert len(doc_keys) == 3
+        assert len(doc_keys) == 4
         assert document["_id"] == document.id == "foo"
         assert document["_rev"] == document.rev
         assert "bar" in doc_keys
         assert document["bar"] is True
+        assert document["bar2"] == 3
 
 
 async def test_context_manager_with_data_parameter(database: Database) -> None:
