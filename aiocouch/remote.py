@@ -211,7 +211,7 @@ class RemoteDatabase:
 
     @raises(400, "Invalid database name or forgotten document id by accident")
     @raises(401, "CouchDB Server Administrator privileges required")
-    @raises(404, "Database doesn’t exist or invalid database name ({id})")
+    @raises(404, "Database doesn't exist or invalid database name ({id})")
     async def _delete(self) -> None:
         await self._remote._delete(self.endpoint)
 
@@ -244,6 +244,16 @@ class RemoteDatabase:
     async def _find(self, selector: Any, **data: Any) -> JsonDict:
         data["selector"] = selector
         _, json = await self._remote._post(f"{self.endpoint}/_find", data)
+        assert not isinstance(json, bytes)
+        return json
+
+    @raises(400, "Invalid request")
+    @raises(401, "Admin permission required")
+    @raises(404, "Database not found")
+    @raises(500, "Execution error")
+    async def _index(self, index: JsonDict, **data: Any) -> JsonDict:
+        data["index"] = index
+        _, json = await self._remote._post(f"{self.endpoint}/_index", data)
         assert not isinstance(json, bytes)
         return json
 
@@ -305,7 +315,7 @@ class RemoteDocument:
     @raises(400, "The format of the request or revision was invalid")
     @raises(401, "Write privilege required for document '{id}'")
     @raises(403, "Write privilege required for document '{id}'")
-    @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
+    @raises(404, "Specified database or document ID doesn't exists ({endpoint})")
     @raises(
         409,
         "Document with the specified ID ({id}) already exists or specified revision "
@@ -319,7 +329,7 @@ class RemoteDocument:
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Write privilege required for document '{id}'")
     @raises(403, "Write privilege required for document '{id}'")
-    @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
+    @raises(404, "Specified database or document ID doesn't exists ({endpoint})")
     @raises(
         409, "Specified revision ({rev}) is not the latest for target document '{id}'"
     )
@@ -333,7 +343,7 @@ class RemoteDocument:
     @raises(401, "Read or write privileges required")
     @raises(403, "Read or write privileges required")
     @raises(
-        404, "Specified database, document ID or revision doesn’t exists ({endpoint})"
+        404, "Specified database, document ID or revision doesn't exists ({endpoint})"
     )
     @raises(
         409,
@@ -376,7 +386,7 @@ class RemoteAttachment:
     @raises(400, "Invalid request parameters")
     @raises(401, "Read privilege required for document '{document_id}'")
     @raises(403, "Read privilege required for document '{document_id}'")
-    @raises(404, "Document '{document_id}' or attachment '{id}' doesn’t exists")
+    @raises(404, "Document '{document_id}' or attachment '{id}' doesn't exists")
     async def _get(self, **params: Any) -> bytes:
         headers, data = await self._document._database._remote._get_bytes(
             self.endpoint, params
@@ -388,7 +398,7 @@ class RemoteAttachment:
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Write privilege required for document '{document_id}'")
     @raises(403, "Write privilege required for document '{document_id}'")
-    @raises(404, "Document '{document_id}' doesn’t exists")
+    @raises(404, "Document '{document_id}' doesn't exists")
     @raises(
         409, "Specified revision {document_rev} is not the latest for target document"
     )
@@ -406,7 +416,7 @@ class RemoteAttachment:
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Write privilege required for document '{document_id}'")
     @raises(403, "Write privilege required for document '{document_id}'")
-    @raises(404, "Specified database or document ID doesn’t exists ({endpoint})")
+    @raises(404, "Specified database or document ID doesn't exists ({endpoint})")
     @raises(
         409, "Specified revision {document_rev} is not the latest for target document"
     )

@@ -221,6 +221,21 @@ class Database(RemoteDatabase):
         async for doc in FindRequest(self, selector, limit, **params):
             yield doc
 
+    async def index(self, index: JsonDict, **kwargs: Any) -> JsonDict:
+        """Create a new index on the database
+
+        This method allows to use the :ref:`_find<couchdb:api/db/_index>`
+        endpoint of the database.
+
+        This method supports all request paramters listed in
+        :ref:`_find<couchdb:api/db/_index>`.
+
+        :param index: JSON description of the index
+        :param kwargs: additional parameters, refer to the CouchDB documentation
+        :return: The response of the CouchDB _index endpoint
+        """
+        return await self._index(index, **kwargs)
+
     @_returns_async_context_manager
     def update_docs(
         self, ids: List[str] = [], create: bool = False

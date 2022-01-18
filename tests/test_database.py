@@ -245,6 +245,19 @@ async def test_find_fields_parameter_gets_rejected(database: Database) -> None:
         [doc async for doc in database.find({"bar": True}, fields="anything")]
 
 
+async def test_find_sorted(filled_database: Database) -> None:
+    await filled_database.index({"fields": ["bar2"]})
+
+    matching_docs = [
+        doc async for doc in filled_database.find({"bar": True}, sort=["bar2"])
+    ]
+
+    assert len(matching_docs) == 3
+    assert matching_docs[0]["bar2"] == 1
+    assert matching_docs[1]["bar2"] == 2
+    assert matching_docs[2]["bar2"] == 3
+
+
 async def test_alldocs_values(filled_database: Database) -> None:
     values = [key async for key, value in filled_database.all_docs.aitems()]
 
