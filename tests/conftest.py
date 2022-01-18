@@ -80,10 +80,6 @@ async def couchdb_with_user_access(
 
 @pytest.fixture
 async def database(couchdb: CouchDB) -> AsyncGenerator[Database, None]:
-    with suppress(NotFoundError):
-        db = await couchdb["aiocouch_test_fixture_database"]
-        await db.delete()
-
     database = await couchdb.create("aiocouch_test_fixture_database")
 
     yield database

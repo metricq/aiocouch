@@ -83,7 +83,7 @@ async def test_deleted_event(filled_database: Database) -> None:
 
     assert isinstance(event, DeletedEvent)
     assert event.id == "foo"
-    assert event.rev.startswith("2-e3a")
+    assert event.rev.startswith("2-")
 
 
 async def test_changed_event_not_include_docs(filled_database: Database) -> None:
