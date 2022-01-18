@@ -59,3 +59,12 @@ Reference
 .. autoclass:: aiocouch.database.Database
     :members:
     :special-members: __getitem__
+
+.. autoclass:: aiocouch.event.BaseChangeEvent
+    :members:
+
+.. autoclass:: aiocouch.event.ChangedEvent
+    :members:
+
+.. autoclass:: aiocouch.event.DeletedEvent
+    :members:

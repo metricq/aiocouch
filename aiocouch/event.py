@@ -40,30 +40,46 @@ from .typing import JsonDict
 
 @dataclass
 class BaseChangeEvent:
+    """The base event for shared properties"""
+
     json: JsonDict
+    """The raw data of the event as JSON"""
 
     @property
     def id(self) -> str:
+        """Returns the id of the document"""
         return cast(str, self.json["id"])
 
     @property
     def rev(self) -> str:
+        """Returns the new rev of the document"""
         return cast(str, self.json["changes"][0]["rev"])
 
     @property
     def sequence(self) -> str:
+        """Returns the sequence identifier of the event"""
         return cast(str, self.json["seq"])
 
 
 class DeletedEvent(BaseChangeEvent):
+    """This event denotes that the document got deleted"""
+
     pass
 
 
 @dataclass
 class ChangedEvent(BaseChangeEvent):
+    """This event denotes that the document got modified"""
+
     database: "db.Database"
+    """The database for reference"""
 
     async def doc(self) -> "document.Document":
+        """Returns the document after the change
+
+        If the ``include_docs`` was set, this will use the data provided in the received event.
+        Otherwise, the document is fetched from the server.
+        """
         try:
             # if in the request include_docs was given, we can create the
             # document on the spot...

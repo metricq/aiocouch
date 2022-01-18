@@ -327,6 +327,15 @@ class Database(RemoteDatabase):
         return await self._get()
 
     async def changes(self, **params: Any) -> AsyncGenerator[BaseChangeEvent, None]:
+        """Listens for events made to documents of this database
+
+        This will return :class:`~aiocouch.event.DeletedEvent` and
+        :class:`~aiocouch.event.ChangedEvent` for deleted and modified
+        documents, respectively.
+
+        See also :ref:`/db/_changes<couchdb:api/db/changes>`.
+
+        """
         async for json in self._changes(**params):
             if "deleted" in json and json["deleted"] is True:
                 yield DeletedEvent(json=json)
