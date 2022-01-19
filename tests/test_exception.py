@@ -1,8 +1,9 @@
-from typing import NoReturn, cast
+from typing import AsyncGenerator, NoReturn, cast
 
 import pytest
 from aiohttp.client import RequestInfo
 from aiohttp.client_exceptions import ClientResponseError
+from aiocouch.couchdb import JsonDict
 
 from aiocouch.exception import (
     BadRequestError,
@@ -14,6 +15,7 @@ from aiocouch.exception import (
     UnauthorizedError,
     UnsupportedMediaTypeError,
     raises,
+    generator_raises,
 )
 
 # All test coroutines will be treated as marked.
@@ -65,6 +67,11 @@ class DummyEndpoint:
     async def raise_custom(self) -> NoReturn:
         raise ClientResponseError(cast(RequestInfo, None), (), status=500)
 
+    @generator_raises(400, "bad thing")
+    async def raise_in_generator(self) -> AsyncGenerator[JsonDict, None]:
+        raise ClientResponseError(cast(RequestInfo, None), (), status=400)
+        yield None
+
 
 async def test_raises() -> None:
     dummy = DummyEndpoint()
@@ -94,3 +101,7 @@ async def test_raises() -> None:
 
     with pytest.raises(CustomError):
         await dummy.raise_custom()
+
+    with pytest.raises(BadRequestError):
+        async for _ in dummy.raise_in_generator():
+            pass

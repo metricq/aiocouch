@@ -326,7 +326,9 @@ class Database(RemoteDatabase):
         """
         return await self._get()
 
-    async def changes(self, **params: Any) -> AsyncGenerator[BaseChangeEvent, None]:
+    async def changes(
+        self, last_event_id: Optional[str] = None, **params: Any
+    ) -> AsyncGenerator[BaseChangeEvent, None]:
         """Listens for events made to documents of this database
 
         This will return :class:`~aiocouch.event.DeletedEvent` and
@@ -335,7 +337,13 @@ class Database(RemoteDatabase):
 
         See also :ref:`/db/_changes<couchdb:api/db/changes>`.
 
+        For convinience, the ``last-event-id`` parameter can also be passed
+        as ``last_event_id``.
+
         """
+        if last_event_id and "last-event-id" not in params:
+            params["last-event-id"] = last_event_id
+
         async for json in self._changes(**params):
             if "deleted" in json and json["deleted"] is True:
                 yield DeletedEvent(json=json)

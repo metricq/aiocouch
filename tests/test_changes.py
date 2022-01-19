@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, cast
+from typing import Any, List, cast
 
 import pytest
 
@@ -16,6 +16,12 @@ async def listen_for_first_change(database: Database, **kwargs: Any) -> BaseChan
         return event
 
     assert False
+
+
+async def listen_for_changes(
+    database: Database, **kwargs: Any
+) -> List[BaseChangeEvent]:
+    return [event async for event in database.changes(**kwargs)]
 
 
 async def test_changed_event_for_new_document(database: Database) -> None:
@@ -67,6 +73,31 @@ async def test_changed_event_for_existing_doc(filled_database: Database) -> None
     assert "Zebras" in doc2
 
 
+async def test_polling(filled_database: Database) -> None:
+    old_events = await listen_for_changes(filled_database, feed="normal")
+    last_event_id = old_events[-1].sequence if len(old_events) else None
+
+    doc = await filled_database["foo"]
+    doc["Zebras"] = "are black with white stripes"
+    await doc.save()
+
+    events = await listen_for_changes(
+        filled_database, feed="normal", last_event_id=last_event_id
+    )
+
+    assert len(events) == 1
+    event = events[0]
+
+    assert isinstance(event, ChangedEvent)
+    assert event.id == "foo"
+    assert event.rev == doc.rev
+
+    doc2 = await event.doc()
+    assert doc2.id == "foo"
+    assert doc2.rev == event.rev
+    assert "Zebras" in doc2
+
+
 async def test_deleted_event(filled_database: Database) -> None:
     async def delete_doc(doc: Document) -> None:
         await asyncio.sleep(0.1)
@@ -84,6 +115,7 @@ async def test_deleted_event(filled_database: Database) -> None:
     assert isinstance(event, DeletedEvent)
     assert event.id == "foo"
     assert event.rev.startswith("2-")
+    assert event.sequence is not None
 
 
 async def test_changed_event_not_include_docs(filled_database: Database) -> None:
@@ -103,6 +135,7 @@ async def test_changed_event_not_include_docs(filled_database: Database) -> None
     assert isinstance(event, ChangedEvent)
     assert event.id == "foo"
     assert event.rev == doc.rev
+    assert event.sequence is not None
 
     doc2 = await event.doc()
 
@@ -137,6 +170,7 @@ async def test_changed_event_include_docs(filled_database: Database) -> None:
     assert isinstance(event, ChangedEvent)
     assert event.id == "foo"
     assert event.rev == doc.rev
+    assert event.sequence is not None
 
     assert "doc" in event.json
 
