@@ -3,8 +3,8 @@ from typing import AsyncGenerator, NoReturn, cast
 import pytest
 from aiohttp.client import RequestInfo
 from aiohttp.client_exceptions import ClientResponseError
-from aiocouch.couchdb import JsonDict
 
+from aiocouch.couchdb import JsonDict
 from aiocouch.exception import (
     BadRequestError,
     ConflictError,
@@ -14,8 +14,8 @@ from aiocouch.exception import (
     PreconditionFailedError,
     UnauthorizedError,
     UnsupportedMediaTypeError,
-    raises,
     generator_raises,
+    raises,
 )
 
 # All test coroutines will be treated as marked.
