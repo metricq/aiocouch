@@ -1,3 +1,9 @@
+# v2.2.0
+
+- Added support for /db/_changes endpoint, which allows to listen for change events
+- Added support for /db/_index endpoint, which allows to create indexes on databases
+- Improved documentation
+
 # v2.1.1
 
 - Fixes missing module dependency
