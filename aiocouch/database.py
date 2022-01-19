@@ -34,7 +34,6 @@ from typing import (
     AsyncContextManager,
     AsyncGenerator,
     Callable,
-    Dict,
     List,
     Optional,
     TypeVar,
@@ -44,13 +43,14 @@ from . import couchdb
 from .bulk import BulkCreateOperation, BulkUpdateOperation
 from .design_document import DesignDocument
 from .document import Document, SecurityDocument
+from .event import BaseChangeEvent, ChangedEvent, DeletedEvent
 from .exception import ConflictError, NotFoundError
 from .remote import RemoteDatabase
 from .request import FindRequest
+from .typing import JsonDict
 from .view import AllDocsView, View
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
-JsonDict = Dict[str, Any]
 
 
 def _returns_async_context_manager(f: FuncT) -> FuncT:
@@ -278,11 +278,15 @@ class Database(RemoteDatabase):
         """
         return await self.get(id)
 
-    async def get(self, id: str, default: Optional[JsonDict] = None) -> Document:
+    async def get(
+        self, id: str, default: Optional[JsonDict] = None, *, rev: Optional[str] = None
+    ) -> Document:
         """Returns the document with the given id
 
         :raises `~aiocouch.NotFoundError`: if the given document does not exist and
             `default` is `None`
+        :raises `~aiocouch.BadRequestError`: if the given rev of the document is
+            invalid or missing
 
 
         :param id: the name of the document
@@ -291,13 +295,15 @@ class Database(RemoteDatabase):
             `default` as its contents, is returned. To create the document on the
             server, :meth:`~aiocouch.document.Document.save` has to be called on the
             returned instance.
+        :param rev: The requested rev of the document. The requested rev might not
+            or not anymore exist on the connected server.
         :return: a local representation of the requested document
 
         """
         doc = Document(self, id, data=default)
 
         try:
-            await doc.fetch(discard_changes=True)
+            await doc.fetch(discard_changes=True, rev=rev)
         except NotFoundError as e:
             if default is None:
                 raise e
@@ -319,3 +325,27 @@ class Database(RemoteDatabase):
 
         """
         return await self._get()
+
+    async def changes(
+        self, last_event_id: Optional[str] = None, **params: Any
+    ) -> AsyncGenerator[BaseChangeEvent, None]:
+        """Listens for events made to documents of this database
+
+        This will return :class:`~aiocouch.event.DeletedEvent` and
+        :class:`~aiocouch.event.ChangedEvent` for deleted and modified
+        documents, respectively.
+
+        See also :ref:`/db/_changes<couchdb:api/db/changes>`.
+
+        For convinience, the ``last-event-id`` parameter can also be passed
+        as ``last_event_id``.
+
+        """
+        if last_event_id and "last-event-id" not in params:
+            params["last-event-id"] = last_event_id
+
+        async for json in self._changes(**params):
+            if "deleted" in json and json["deleted"] is True:
+                yield DeletedEvent(json=json)
+            else:
+                yield ChangedEvent(database=self, json=json)

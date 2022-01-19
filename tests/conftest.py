@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator, Optional
 
 import pytest
 
-from aiocouch import CouchDB, Database, Document
+from aiocouch import CouchDB, Database, Document, NotFoundError
 
 
 @pytest.fixture

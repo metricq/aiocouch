@@ -264,6 +264,21 @@ async def test_delete_dirty(filled_database: Database) -> None:
     with pytest.raises(ConflictError):
         await doc.delete()
 
+    assert doc.rev
+    assert doc.rev.startswith("1-")
+
+
+async def test_safe_deleted(filled_database: Database) -> None:
+    doc = await filled_database["foo"]
+
+    await doc.delete()
+
+    doc["Zebras"] = "are majestic"
+    await doc.save()
+
+    assert doc.rev
+    assert doc.rev.startswith("3-")
+
 
 async def test_copy(filled_database: Database) -> None:
     foo = await filled_database["foo"]
@@ -382,6 +397,24 @@ async def test_cache(doc: Document) -> None:
     await doc.save()
 
     assert doc._dirty_cache is False
+
+
+async def test_fetch_rev(filled_database: Database) -> None:
+    doc = await filled_database.get("foo")
+    old_rev = doc.rev
+
+    doc["Zebras"] = "are the best"
+    await doc.save()
+
+    assert doc.rev != old_rev
+
+    await doc.fetch(rev=old_rev)
+
+    assert doc.rev == old_rev
+    assert "Zebras" not in doc
+
+    doc2 = await filled_database.get("foo", rev=old_rev)
+    assert doc.data == doc2.data
 
 
 async def test_security_document_context_manager(database: Database) -> None:

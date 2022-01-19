@@ -30,7 +30,17 @@
 
 import functools
 from contextlib import suppress
-from typing import Any, Callable, Dict, NoReturn, Optional, Type, TypeVar, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    NoReturn,
+    Optional,
+    Type,
+    TypeVar,
+    cast,
+)
 
 import aiohttp
 from typing_extensions import Protocol
@@ -155,6 +165,27 @@ def raises(
         async def wrapper(endpoint: Endpoint, *args: Any, **kwargs: Any) -> Any:
             try:
                 return await func(endpoint, *args, **kwargs)
+            except aiohttp.ClientResponseError as exception:
+                if status == exception.status:
+                    raise_for_endpoint(endpoint, message, exception, exception_type)
+                raise exception
+
+        return cast(FuncT, wrapper)
+
+    return decorator_raises
+
+
+def generator_raises(
+    status: int, message: str, exception_type: Optional[Type[Exception]] = None
+) -> Callable[[FuncT], FuncT]:
+    def decorator_raises(func: FuncT) -> FuncT:
+        @functools.wraps(func)
+        async def wrapper(
+            endpoint: Endpoint, *args: Any, **kwargs: Any
+        ) -> AsyncGenerator[Any, None]:
+            try:
+                async for data in func(endpoint, *args, **kwargs):
+                    yield data
             except aiohttp.ClientResponseError as exception:
                 if status == exception.status:
                     raise_for_endpoint(endpoint, message, exception, exception_type)

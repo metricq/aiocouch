@@ -29,15 +29,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import asyncio
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+import json
+from contextlib import suppress
+from typing import Any, AsyncGenerator, List, Optional, Tuple, Union, cast
 from urllib.parse import quote
 
 import aiohttp
 
 from . import database, document
-from .exception import NotFoundError, raises
+from .exception import NotFoundError, generator_raises, raises
+from .typing import JsonDict
 
-JsonDict = Dict[str, Any]
 RequestResult = Tuple[JsonDict, Union[bytes, JsonDict]]
 
 
@@ -144,6 +146,26 @@ class RemoteServer:
                 cast(JsonDict, resp.headers),
                 await resp.json() if return_json else await resp.read(),
             )
+
+    async def _streamed_request(
+        self,
+        method: str,
+        path: str,
+        params: Optional[JsonDict] = None,
+        **kwargs: Any,
+    ) -> AsyncGenerator[JsonDict, None]:
+        kwargs["params"] = _stringify_params(params) if params else {}
+        kwargs.setdefault("timeout", aiohttp.ClientTimeout())
+
+        async with self._http_session.request(
+            method, url=f"{self._server}{path}", **kwargs
+        ) as resp:
+            resp.raise_for_status()
+
+            async for line in resp.content:
+                # this should only happen for empty lines
+                with suppress(json.JSONDecodeError):
+                    yield json.loads(line)
 
     @raises(401, "Invalid credentials")
     async def _all_dbs(self, **params: Any) -> List[str]:
@@ -270,6 +292,22 @@ class RemoteDatabase:
         _, json = await self._remote._put(f"{self.endpoint}/_security", doc)
         assert not isinstance(json, bytes)
         return json
+
+    @generator_raises(400, "Invalid request")
+    async def _changes(self, **params: Any) -> AsyncGenerator[JsonDict, None]:
+        if "feed" in params and params["feed"] == "continuous":
+            params.setdefault("heartbeat", True)
+            async for data in self._remote._streamed_request(
+                "GET", f"{self.endpoint}/_changes", params=params
+            ):
+                yield data
+        else:
+            _, json = await self._remote._get(
+                f"{self.endpoint}/_changes", params=params
+            )
+            assert not isinstance(json, bytes)
+            for result in json["results"]:
+                yield result
 
 
 class RemoteDocument:

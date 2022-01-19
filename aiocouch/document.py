@@ -31,17 +31,7 @@
 import json
 from contextlib import suppress
 from types import TracebackType
-from typing import (
-    Any,
-    Dict,
-    ItemsView,
-    KeysView,
-    List,
-    Optional,
-    Type,
-    ValuesView,
-    cast,
-)
+from typing import Any, ItemsView, KeysView, List, Optional, Type, ValuesView, cast
 
 from deprecated import deprecated
 
@@ -49,8 +39,7 @@ from . import database
 from .attachment import Attachment
 from .exception import ConflictError, ForbiddenError, NotFoundError, raises
 from .remote import RemoteDocument
-
-JsonDict = Dict[str, Any]
+from .typing import JsonDict
 
 
 class Document(RemoteDocument):
@@ -109,17 +98,22 @@ class Document(RemoteDocument):
             json.dumps(self._data, sort_keys=True)
         )
 
-    async def fetch(self, discard_changes: bool = False) -> None:
+    async def fetch(
+        self, discard_changes: bool = False, *, rev: Optional[str] = None
+    ) -> None:
         """Retrieves the document data from the server
 
         Fetching the document will retrieve the data from the server using a network
         request and update the local data.
 
         :raises ~aiocouch.ConflictError: if the local data has changed without saving
+        :raises ~aiocouch.BadRequestError: if the given rev is invalid or missing
 
         :param discard_changes: If set to `True`, the local data object will the
             overridden with the retrieved content. If the local data was changed, no
             exception will be raised.
+        :param rev: The requested rev of the document. The requested rev might not
+            or not anymore exist on the connected server.
 
         """
         if self._dirty_cache and not (discard_changes or self._fresh):
@@ -127,7 +121,11 @@ class Document(RemoteDocument):
                 f"Cannot fetch document '{self.id}' from server, "
                 "as the local cache has unsaved changes."
             )
-        self._update_cache(await self._get())
+
+        if rev:
+            self._update_cache(await self._get(rev=rev))
+        else:
+            self._update_cache(await self._get())
 
     async def save(self) -> None:
         """Saves the current state to the CouchDB server

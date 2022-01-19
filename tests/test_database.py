@@ -103,6 +103,13 @@ async def test_get_for_non_existing(database: Database) -> None:
         await database.get("foo")
 
 
+async def test_get_with_bad_rev(filled_database: Database) -> None:
+    from aiocouch.exception import BadRequestError
+
+    with pytest.raises(BadRequestError):
+        await filled_database.get("foo", rev="dgsahfgesogfesgfh")
+
+
 async def test_get_for_non_existing_with_empty_default(database: Database) -> None:
     doc = await database.get("foo", default={})
 
