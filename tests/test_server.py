@@ -52,7 +52,7 @@ async def test_create_for_existing_ok_with_race(
     try:
         # try to trigger a race-condition during the creation of the database
         await asyncio.gather(
-            *[couchdb.create(database_id, exists_ok=True) for _ in range(100)]
+            *[couchdb.create(database_id, exists_ok=True) for _ in range(5)]
         )
     finally:
         # for this specific test, we need to do a manual cleanup
