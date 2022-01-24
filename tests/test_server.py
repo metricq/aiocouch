@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from aiocouch import CouchDB, Database
@@ -33,6 +35,29 @@ async def test_create_for_existing(couchdb: CouchDB, database: Database) -> None
 
     with pytest.raises(PreconditionFailedError):
         await couchdb.create(database.id)
+
+
+async def test_create_for_existing_but_mismatching_params(
+    couchdb: CouchDB, database: Database
+) -> None:
+    from aiocouch import PreconditionFailedError
+
+    with pytest.raises(PreconditionFailedError):
+        await couchdb.create(database.id, partitioned=True)
+
+
+async def test_create_for_existing_ok_with_race(
+    couchdb: CouchDB, database_id: str
+) -> None:
+    try:
+        # try to trigger a race-condition during the creation of the database
+        await asyncio.gather(
+            *[couchdb.create(database_id, exists_ok=True) for _ in range(100)]
+        )
+    finally:
+        # for this specific test, we need to do a manual cleanup
+        db = await couchdb.create(database_id, exists_ok=True)
+        await db.delete()
 
 
 async def test_create_for_existing_ok(couchdb: CouchDB, database: Database) -> None:

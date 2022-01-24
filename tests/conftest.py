@@ -79,8 +79,15 @@ async def couchdb_with_user_access(
 
 
 @pytest.fixture
-async def database(couchdb: CouchDB) -> AsyncGenerator[Database, None]:
-    database = await couchdb.create("aiocouch_test_fixture_database")
+def database_id() -> str:
+    return "aiocouch_test_fixture_database"
+
+
+@pytest.fixture
+async def database(
+    couchdb: CouchDB, database_id: str
+) -> AsyncGenerator[Database, None]:
+    database = await couchdb.create(database_id)
 
     yield database
 

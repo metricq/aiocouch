@@ -91,13 +91,13 @@ class CouchDB:
 
         """
         db = Database(self, id)
-        if not await db._exists():
+        try:
             await db._put(**kwargs)
-            return db
-        elif exists_ok:
-            return db
-        else:
-            raise PreconditionFailedError(f"The database '{id}' does already exist.")
+        except PreconditionFailedError as e:
+            if not exists_ok:
+                raise e
+
+        return db
 
     async def __getitem__(self, id: str) -> "Database":
         """Returns a representation for the given database identifier
