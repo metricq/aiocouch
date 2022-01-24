@@ -92,8 +92,12 @@ class CouchDB:
         """
         db = Database(self, id)
         if not await db._exists():
-            await db._put(**kwargs)
-            return db
+            try:
+                await db._put(**kwargs)
+            except PreconditionFailedError as e:
+                # check for error with status 412
+                if e.__str__() == "Database already exists" and exists_ok is True:
+                    return db
         elif exists_ok:
             return db
         else:
