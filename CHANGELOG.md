@@ -1,3 +1,7 @@
+# v2.2.1
+
+- Fixed unexpected exception when calling CouchDB.create(exists_ok=True) in case of race conditions
+
 # v2.2.0
 
 - Added support for /db/_changes endpoint, which allows to listen for change events
