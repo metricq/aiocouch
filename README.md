@@ -12,7 +12,7 @@ An asynchronous client library for CouchDB 2.0 based on asyncio using aiohttp
 
 - All requests are asynchronus using aiohttp
 - Supports CouchDB 2.x and 3.x
-- Support for modern Python ≥ 3.6
+- Support for modern Python ≥ 3.7
 
 
 ## Library installation

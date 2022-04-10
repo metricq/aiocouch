@@ -13,7 +13,7 @@ Key features
 
 - All requests are asynchronus using aiohttp
 - Supports CouchDB 2.x and 3.x
-- Support for modern Python ≥ 3.6
+- Support for modern Python ≥ 3.7
 
 
 Library installation
@@ -76,7 +76,7 @@ Continuous Integration.
 Dependencies
 ============
 
-- Python 3.6+
+- Python 3.7+
 - *aiohttp*
 - *Deprecated*
 
