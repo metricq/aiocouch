@@ -41,6 +41,7 @@ JsonDict = Dict[str, Any]
 
 @dataclass(frozen=True)
 class ViewResponse:
+    _database: "database.Database"
     offset: int
     rows: List[JsonDict]
     total_rows: int
@@ -63,7 +64,6 @@ class ViewResponse:
 
     def docs(
         self,
-        database: "database.Database",
         create: bool = False,
         include_ddocs: bool = False,
     ) -> Generator[Document, None, None]:
@@ -71,16 +71,16 @@ class ViewResponse:
             if "error" not in row and row["doc"] is not None:
                 if row["id"].startswith("_design/") and not include_ddocs:
                     continue
-                doc = Document(database, row["id"])
+                doc = Document(self._database, row["id"])
                 doc._update_cache(row["doc"])
                 yield doc
             elif create:
-                doc = Document(database, row["key"])
+                doc = Document(self._database, row["key"])
                 yield doc
             else:
                 raise NotFoundError(
                     f"The document '{row['key']}' does not exist in the database "
-                    f"{database.id}."
+                    f"{self._database.id}."
                 )
 
 
@@ -95,10 +95,24 @@ class View(RemoteView):
         return "\uffff"
 
     async def get(self, **params: Any) -> ViewResponse:
-        return ViewResponse(**(await self._get(**params)))
+        return ViewResponse(_database=self._database, **(await self._get(**params)))
 
     async def post(self, ids: List[str], **params: Any) -> ViewResponse:
-        return ViewResponse(**(await self._post(ids, **params)))
+        return ViewResponse(
+            _database=self._database, **(await self._post(ids, **params))
+        )
+
+    async def akeys(self, **params: Any) -> AsyncGenerator[str, None]:
+        for key in (await self.get(**params)).keys():
+            yield key
+
+    async def aitems(self, **params: Any) -> AsyncGenerator[Tuple[str, Any], None]:
+        for key, value in (await self.get(**params)).items():
+            yield key, value,
+
+    async def avalues(self, **params: Any) -> AsyncGenerator[Any, None]:
+        for value in (await self.get(**params)).values():
+            yield value
 
     async def ids(
         self,
@@ -110,28 +124,12 @@ class View(RemoteView):
             params["startkey"] = f'"{prefix}"'
             params["endkey"] = f'"{prefix}{self.prefix_sentinal}"'
 
-        if keys is None:
-            response = await self.get(**params)
-        else:
-            response = await self.post(keys, **params)
+        response = await (
+            self.get(**params) if keys is None else self.post(keys, **params)
+        )
 
         for key in response.keys():
             yield key
-
-    async def akeys(self, **params: Any) -> AsyncGenerator[str, None]:
-        response = await self.get(**params)
-        for key in response.keys():
-            yield key
-
-    async def aitems(self, **params: Any) -> AsyncGenerator[Tuple[str, Any], None]:
-        response = await self.get(**params)
-        for key, value in response.items():
-            yield key, value,
-
-    async def avalues(self, **params: Any) -> AsyncGenerator[Any, None]:
-        response = await self.get(**params)
-        for value in response.values():
-            yield value
 
     async def docs(
         self,
@@ -142,12 +140,7 @@ class View(RemoteView):
         **params: Any,
     ) -> AsyncGenerator[Document, None]:
         params["include_docs"] = True
-        if prefix is None:
-            if ids is None:
-                response = await self.get(**params)
-            else:
-                response = await self.post(ids, **params)
-        else:
+        if prefix is not None:
             if ids is not None or create:
                 raise ValueError(
                     "prefix cannot be used together with ids or create parameter"
@@ -156,11 +149,11 @@ class View(RemoteView):
             params["startkey"] = f'"{prefix}"'
             params["endkey"] = f'"{prefix}{self.prefix_sentinal}"'
 
-            response = await self.get(**params)
+        response = await (
+            self.get(**params) if ids is None else self.post(ids, **params)
+        )
 
-        for doc in response.docs(
-            self._database, create=create, include_ddocs=include_ddocs
-        ):
+        for doc in response.docs(create=create, include_ddocs=include_ddocs):
             yield doc
 
 
