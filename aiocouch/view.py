@@ -28,9 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Tuple, cast
-
 from dataclasses import dataclass
+from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Tuple
 
 from . import database
 from .document import Document
