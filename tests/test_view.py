@@ -110,3 +110,13 @@ async def test_null_view_ids_with_prefix(filled_database_with_view: Database) ->
 
     assert values[0] == "baz"
     assert values[1] == "baz2"
+
+
+async def test_view_response_contains_update_seq(
+    filled_database_with_view: Database,
+) -> None:
+    response = await filled_database_with_view.view("test_ddoc", "null_view").get(
+        update_seq=True
+    )
+
+    assert response.update_seq is not None

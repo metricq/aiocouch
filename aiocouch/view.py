@@ -28,7 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, cast
+from dataclasses import dataclass
+from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Tuple
 
 from . import database
 from .document import Document
@@ -36,6 +37,51 @@ from .exception import NotFoundError
 from .remote import RemoteView
 
 JsonDict = Dict[str, Any]
+
+
+@dataclass(frozen=True)
+class ViewResponse:
+    _database: "database.Database"
+    offset: int
+    rows: List[JsonDict]
+    total_rows: int
+    update_seq: Any = None
+
+    def keys(self) -> Generator[str, None, None]:
+        for row in self.rows:
+            if "error" not in row:
+                yield row["id"]
+
+    def values(self) -> Generator[Tuple[str, Any], None, None]:
+        for row in self.rows:
+            if "error" not in row:
+                yield row["value"]
+
+    def items(self) -> Generator[Any, None, None]:
+        for row in self.rows:
+            if "error" not in row:
+                yield row["key"], row["value"],
+
+    def docs(
+        self,
+        create: bool = False,
+        include_ddocs: bool = False,
+    ) -> Generator[Document, None, None]:
+        for row in self.rows:
+            if "error" not in row and row["doc"] is not None:
+                if row["id"].startswith("_design/") and not include_ddocs:
+                    continue
+                doc = Document(self._database, row["id"])
+                doc._update_cache(row["doc"])
+                yield doc
+            elif create:
+                doc = Document(self._database, row["key"])
+                yield doc
+            else:
+                raise NotFoundError(
+                    f"The document '{row['key']}' does not exist in the database "
+                    f"{self._database.id}."
+                )
 
 
 class View(RemoteView):
@@ -48,19 +94,25 @@ class View(RemoteView):
     def prefix_sentinal(self) -> str:
         return "\uffff"
 
-    async def get(self, **params: Any) -> AsyncGenerator[JsonDict, None]:
-        result_chunk = await self._get(**params)
+    async def get(self, **params: Any) -> ViewResponse:
+        return ViewResponse(_database=self._database, **(await self._get(**params)))
 
-        for res in result_chunk["rows"]:
-            yield res
+    async def post(self, ids: List[str], **params: Any) -> ViewResponse:
+        return ViewResponse(
+            _database=self._database, **(await self._post(ids, **params))
+        )
 
-    async def post(
-        self, ids: List[str], create: bool = False, **params: Any
-    ) -> AsyncGenerator[JsonDict, None]:
-        result_chunk = await self._post(ids, **params)
+    async def akeys(self, **params: Any) -> AsyncGenerator[str, None]:
+        for key in (await self.get(**params)).keys():
+            yield key
 
-        for res in result_chunk["rows"]:
-            yield res
+    async def aitems(self, **params: Any) -> AsyncGenerator[Tuple[str, Any], None]:
+        for key, value in (await self.get(**params)).items():
+            yield key, value,
+
+    async def avalues(self, **params: Any) -> AsyncGenerator[Any, None]:
+        for value in (await self.get(**params)).values():
+            yield value
 
     async def ids(
         self,
@@ -72,26 +124,12 @@ class View(RemoteView):
             params["startkey"] = f'"{prefix}"'
             params["endkey"] = f'"{prefix}{self.prefix_sentinal}"'
 
-        if keys is None:
-            async for res in self.get(**params):
-                if "error" not in res:
-                    yield res["id"]
-        else:
-            async for res in self.post(keys, **params):
-                if "error" not in res:
-                    yield res["id"]
+        response = await (
+            self.get(**params) if keys is None else self.post(keys, **params)
+        )
 
-    async def akeys(self, **params: Any) -> AsyncGenerator[str, None]:
-        async for res in self.get(**params):
-            yield res["key"]
-
-    async def aitems(self, **params: Any) -> AsyncGenerator[Tuple[str, Any], None]:
-        async for res in self.get(**params):
-            yield cast(str, res["key"]), res["value"]
-
-    async def avalues(self, **params: Any) -> AsyncGenerator[Any, None]:
-        async for res in self.get(**params):
-            yield res["value"]
+        for key in response.keys():
+            yield key
 
     async def docs(
         self,
@@ -102,12 +140,7 @@ class View(RemoteView):
         **params: Any,
     ) -> AsyncGenerator[Document, None]:
         params["include_docs"] = True
-        if prefix is None:
-            if ids is None:
-                iter = self.get(**params)
-            else:
-                iter = self.post(ids, **params)
-        else:
+        if prefix is not None:
             if ids is not None or create:
                 raise ValueError(
                     "prefix cannot be used together with ids or create parameter"
@@ -116,23 +149,12 @@ class View(RemoteView):
             params["startkey"] = f'"{prefix}"'
             params["endkey"] = f'"{prefix}{self.prefix_sentinal}"'
 
-            iter = self.get(**params)
+        response = await (
+            self.get(**params) if ids is None else self.post(ids, **params)
+        )
 
-        async for res in iter:
-            if "error" not in res and res["doc"] is not None:
-                if res["id"].startswith("_design/") and not include_ddocs:
-                    continue
-                doc = Document(self._database, res["id"])
-                doc._update_cache(res["doc"])
-                yield doc
-            elif create:
-                doc = Document(self._database, res["key"])
-                yield doc
-            else:
-                raise NotFoundError(
-                    f"The document '{res['key']}' does not exist in the database "
-                    f"{self._database.id}."
-                )
+        for doc in response.docs(create=create, include_ddocs=include_ddocs):
+            yield doc
 
 
 class AllDocsView(View):
