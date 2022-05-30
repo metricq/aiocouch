@@ -74,7 +74,7 @@ class RemoteServer:
         **kwargs: Any,
     ):
         self._server = server
-        auth = aiohttp.BasicAuth(user, password) if user and password else None
+        auth = aiohttp.BasicAuth(user, password, "utf-8") if user and password else None
         headers = {"Cookie": "AuthSession=" + cookie} if cookie else None
         self._http_session = aiohttp.ClientSession(headers=headers, auth=auth, **kwargs)
         # self._databases = {}

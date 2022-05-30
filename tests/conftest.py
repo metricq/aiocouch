@@ -26,6 +26,25 @@ async def couchdb_user_account(couchdb: CouchDB) -> AsyncGenerator[CouchDB, None
 
 
 @pytest.fixture
+async def couchdb_utf8_user_account(couchdb: CouchDB) -> AsyncGenerator[CouchDB, None]:
+    users = await couchdb.create("_users", exists_ok=True)
+
+    doc = await users.create("org.couchdb.user:aiocouch_test_user_🛋️")
+    doc["name"] = "aiocouch_test_user_🛋️"
+    doc["password"] = "aiocouch_test_user_🛋️"
+    doc["roles"] = ["aiocouch_test_role"]
+    doc["type"] = "user"
+
+    await doc.save()
+    assert doc["_id"] == "org.couchdb.user:aiocouch_test_user_🛋️"
+    assert doc.id == "org.couchdb.user:aiocouch_test_user_🛋️"
+
+    yield couchdb
+
+    await doc.delete()
+
+
+@pytest.fixture
 async def couchdb(event_loop: Any) -> AsyncGenerator[CouchDB, None]:
     import asyncio
     import os
