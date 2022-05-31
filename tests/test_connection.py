@@ -90,6 +90,18 @@ async def test_basic_authentication() -> None:
         await couchdb.check_credentials()
 
 
+async def test_utf8_basic_authentication(couchdb_utf8_user_account: CouchDB) -> None:
+    try:
+        hostname = os.environ["COUCHDB_HOST"]
+    except KeyError:
+        hostname = "http://localhost:5984"
+
+    user = "aiocouch_test_user_🛋️"
+
+    async with CouchDB(hostname, user=user, password=user) as couchdb:
+        await couchdb.check_credentials()
+
+
 async def test_with_wrong_credentials() -> None:
     import os
 
