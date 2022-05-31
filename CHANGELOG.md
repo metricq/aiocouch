@@ -1,3 +1,7 @@
+# v2.2.2
+
+- Fixed BasicAuth for UTF-8 encoded credentials
+
 # v2.2.1
 
 - Fixed unexpected exception when calling CouchDB.create(exists_ok=True) in case of race conditions
