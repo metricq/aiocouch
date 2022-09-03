@@ -165,7 +165,7 @@ async def test_docs_filtered(filled_database: Database) -> None:
     assert "baz" in keys
 
 
-async def test_docs_on_non_existant(database: Database) -> None:
+async def test_docs_on_non_existent(database: Database) -> None:
     docs = [doc async for doc in database.docs(["foo"], create=True)]
 
     assert len(docs) == 1
@@ -245,6 +245,16 @@ async def test_find_limited(filled_database: Database) -> None:
         matching_keys.append(doc.id)
 
     assert "baz2" in matching_keys
+
+
+async def test_purge(filled_database: Database) -> None:
+    from aiocouch.exception import NotFoundError
+
+    doc = await filled_database["foo"]
+    await filled_database._purge({doc.id: [doc.rev]})
+
+    with pytest.raises(NotFoundError):
+        await doc.info()
 
 
 async def test_find_fields_parameter_gets_rejected(database: Database) -> None:
