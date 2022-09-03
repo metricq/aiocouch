@@ -341,8 +341,7 @@ class Database(RemoteDatabase):
         as ``last_event_id``.
 
         """
-        if last_event_id and "last-event-id" not in params:
-            params["last-event-id"] = last_event_id
+        params.setdefault("last-event-id", last_event_id)
 
         async for json in self._changes(**params):
             if "deleted" in json and json["deleted"] is True:
