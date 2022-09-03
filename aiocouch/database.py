@@ -318,7 +318,7 @@ class Database(RemoteDatabase):
     async def info(self) -> JsonDict:
         """Returns basic information about the database
 
-        See also :ref:`GET /db<couchdb:api/db>`.
+        See also :external+couchdb:http:get:`/{db}`.
 
         :return: Description of returned object.
         :rtype: def
