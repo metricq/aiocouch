@@ -189,7 +189,7 @@ class RemoteServer:
         assert not isinstance(json, bytes)
         return json
 
-    @raises(401, "Authentification failed, check provided credentials.")
+    @raises(401, "Authentication failed, check provided credentials.")
     async def _check_session(self) -> RequestResult:
         return await self._get("/_session")
 

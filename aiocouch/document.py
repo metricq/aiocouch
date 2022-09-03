@@ -57,7 +57,7 @@ class Document(RemoteDocument):
 
     :param `~aiocouch.database.Database` database: The database of the document
     :param id: the id of the document
-    :param data: the inital data used to set the body of the document
+    :param data: the initial data used to set the body of the document
 
     """
 

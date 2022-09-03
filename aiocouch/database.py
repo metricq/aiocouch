@@ -147,7 +147,7 @@ class Database(RemoteDatabase):
         :param create: If ``True``, every document contained in `ids`, which doesn't
             exist, will be represented by an empty
             :class:`~aiocouch.document.Document` instance.
-        :param prefix: Allows to iterator over a subset of documents by specifing a
+        :param prefix: Allows to iterator over a subset of documents by specifying a
             prefix that the documents must match.
         :param include_ddocs: Include the design documents of the database.
         :param params: Additional query parameters,
@@ -204,7 +204,7 @@ class Database(RemoteDatabase):
         This method allows to use the :ref:`_find<couchdb:api/db/_find>`
         endpoint of the database.
 
-        This method supports all request paramters listed in
+        This method supports all request parameters listed in
         :ref:`_find<couchdb:api/db/_find>`.
 
         .. note:: As this method returns :class:`~aiocouch.document.Document` s, which
@@ -227,7 +227,7 @@ class Database(RemoteDatabase):
         This method allows to use the :ref:`_index<couchdb:api/db/find/index>`
         endpoint of the database.
 
-        This method supports all request paramters listed in
+        This method supports all request parameters listed in
         :ref:`_index<couchdb:api/db/find/index>`.
 
         :param index: JSON description of the index
@@ -337,7 +337,7 @@ class Database(RemoteDatabase):
 
         See also :ref:`/db/_changes<couchdb:api/db/changes>`.
 
-        For convinience, the ``last-event-id`` parameter can also be passed
+        For convenience, the ``last-event-id`` parameter can also be passed
         as ``last_event_id``.
 
         """
