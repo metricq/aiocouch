@@ -47,9 +47,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Setup CouchDB
-        uses: iamssen/couchdb-github-action@0.3.0
-        with:
-          couchdb-version: ${{ matrix.couchdb }}
+        run: |
+          curl -X PUT http://admin:admin@127.0.0.1:5984/_users
+          curl -X PUT http://admin:admin@127.0.0.1:5984/_replicator
+          curl -X PUT http://admin:admin@127.0.0.1:5984/_global_changes
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -65,6 +66,14 @@ jobs:
         if: ${{ matrix.python-version == '3.9' && matrix.couchdb == '3.1' }}
         with:
           name: Python ${{ matrix.python-version }}
+    services:
+      couchdb:
+        image: couchdb:${{ matrix.couchdb }}
+      ports:
+        - 5984:5984
+      env:
+        COUCHDB_USER: admin
+        COUCHDB_PASSWORD: admin
 
   documentation:
     runs-on: ubuntu-latest
