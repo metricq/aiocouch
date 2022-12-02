@@ -271,7 +271,13 @@ async def test_delete_dirty(filled_database: Database) -> None:
 async def test_safe_deleted(filled_database: Database) -> None:
     doc = await filled_database["foo"]
 
+    assert doc.rev
+    assert doc.rev.startswith("1-")
+
     await doc.delete()
+
+    assert doc.rev
+    assert doc.rev.startswith("2-")
 
     doc["Zebras"] = "are majestic"
     await doc.save()
@@ -415,6 +421,72 @@ async def test_fetch_rev(filled_database: Database) -> None:
 
     doc2 = await filled_database.get("foo", rev=old_rev)
     assert doc.data == doc2.data
+
+
+async def test_data_len(doc: Document, saved_doc: Document) -> None:
+    assert doc.data is None
+    assert len(doc) == 1
+
+    assert saved_doc.data
+    assert len(saved_doc.data) == 1
+    assert len(saved_doc) == 3
+
+    doc2 = Document(cast(Database, None), "doc2", {"foo": "bar"})
+    assert doc2.data is None
+    assert len(doc2) == 2
+
+    doc3 = Document(cast(Database, None), "doc3")
+    assert doc3.data is None
+    assert len(doc3) == 1
+
+
+async def test_clear_with_empty_doc(doc: Document) -> None:
+    id = doc.id
+    doc.clear()
+    assert doc.id == id
+    assert doc.data is None
+    assert len(doc) == 1
+
+
+async def test_clear_with_rev(saved_doc: Document) -> None:
+    id = saved_doc.id
+    saved_doc.clear()
+    assert saved_doc.id == id
+    assert saved_doc.data == {}
+    assert len(saved_doc) == 2
+
+
+async def test_clear_without_rev() -> None:
+    doc = Document(cast(Database, None), "doc", {"foo": "bar"})
+    id = doc.id
+    doc.clear()
+    assert doc.id == id
+    assert doc.data is None
+    assert len(doc) == 1
+
+
+async def test_data_of_deleted_doc(saved_doc: Document) -> None:
+    await saved_doc.delete()
+
+    assert saved_doc.data is None
+
+
+async def test_data_of_empty_doc(doc: Document) -> None:
+    await doc.save()
+
+    assert doc.id
+    assert doc.rev
+    assert len(doc) == 2
+
+    assert doc.data is not None
+    assert doc.data == {}
+
+
+async def test_deleted_document_data(saved_doc: Document) -> None:
+    await saved_doc.delete()
+
+    assert saved_doc.data is None
+    assert "_deleted" in saved_doc
 
 
 async def test_security_document_context_manager(database: Database) -> None:

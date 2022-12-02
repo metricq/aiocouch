@@ -165,3 +165,11 @@ async def large_filled_database(database: Database) -> AsyncGenerator[Database, 
 async def doc(database: Database) -> AsyncGenerator[Document, None]:
     doc = await database.create("foo")
     yield doc
+
+
+@pytest.fixture
+async def saved_doc(database: Database) -> AsyncGenerator[Document, None]:
+    doc = await database.create("foo")
+    doc["foo"] = "bar"
+    await doc.save()
+    yield doc
