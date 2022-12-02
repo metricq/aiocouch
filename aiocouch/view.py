@@ -91,7 +91,7 @@ class View(RemoteView):
         super().__init__(database, design_doc, id)
 
     @property
-    def prefix_sentinal(self) -> str:
+    def prefix_sentinel(self) -> str:
         return "\uffff"
 
     async def get(self, **params: Any) -> ViewResponse:
@@ -122,7 +122,7 @@ class View(RemoteView):
     ) -> AsyncGenerator[str, None]:
         if prefix is not None:
             params["startkey"] = f'"{prefix}"'
-            params["endkey"] = f'"{prefix}{self.prefix_sentinal}"'
+            params["endkey"] = f'"{prefix}{self.prefix_sentinel}"'
 
         response = await (
             self.get(**params) if keys is None else self.post(keys, **params)
@@ -147,7 +147,7 @@ class View(RemoteView):
                 )
 
             params["startkey"] = f'"{prefix}"'
-            params["endkey"] = f'"{prefix}{self.prefix_sentinal}"'
+            params["endkey"] = f'"{prefix}{self.prefix_sentinel}"'
 
         response = await (
             self.get(**params) if ids is None else self.post(ids, **params)
@@ -166,5 +166,5 @@ class AllDocsView(View):
         return f"/{self._database.id}/_all_docs"
 
     @property
-    def prefix_sentinal(self) -> str:
+    def prefix_sentinel(self) -> str:
         return chr(0x10FFFE)

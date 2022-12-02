@@ -126,7 +126,7 @@ class CouchDB:
     async def info(self) -> JsonDict:
         """Returns the meta information about the connected CouchDB server.
 
-        See also :ref:`GET /<couchdb:api/server/root>`
+        See also :external+couchdb:http:get:`/`.
 
         :return: A dict containing the response json.
 

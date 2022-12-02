@@ -189,7 +189,7 @@ class RemoteServer:
         assert not isinstance(json, bytes)
         return json
 
-    @raises(401, "Authentification failed, check provided credentials.")
+    @raises(401, "Authentication failed, check provided credentials.")
     async def _check_session(self) -> RequestResult:
         return await self._get("/_session")
 
@@ -308,6 +308,16 @@ class RemoteDatabase:
             assert not isinstance(json, bytes)
             for result in json["results"]:
                 yield result
+
+    @raises(400, "Invalid database or JSON payload")
+    @raises(415, "Bad Content-Type header value")
+    @raises(500, "Internal server error or timeout")
+    async def _purge(self, docs: JsonDict, **params: Any) -> JsonDict:
+        _, json = await self._remote._post(
+            f"{self.endpoint}/_purge", data=docs, params=params
+        )
+        assert not isinstance(json, bytes)
+        return json
 
 
 class RemoteDocument:

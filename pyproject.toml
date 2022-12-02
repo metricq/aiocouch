@@ -59,6 +59,7 @@ testpaths = [
     "tests"
 ]
 python_files = 'test_*.py'
+asyncio_mode = "auto"
 
 [tool.mypy]
 warn_return_any = true

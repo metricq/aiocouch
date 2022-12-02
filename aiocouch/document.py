@@ -57,7 +57,7 @@ class Document(RemoteDocument):
 
     :param `~aiocouch.database.Database` database: The database of the document
     :param id: the id of the document
-    :param data: the inital data used to set the body of the document
+    :param data: the initial data used to set the body of the document
 
     """
 
@@ -139,11 +139,18 @@ class Document(RemoteDocument):
             self._update_rev_after_save(data)
 
     async def delete(self, discard_changes: bool = False) -> None:
-        """Deletes the document from the server
+        """Marks the document as deleted on the server
 
-        Calling this method deletes the local data and the document on the server.
-        Afterwards, the instance can be filled with new data and call :meth:`.save`
-        again.
+        Calling this method deletes the local data and marks document as deleted on
+        the server. Afterwards, the instance can be filled with new data and call
+        :meth:`.save` again.
+
+        .. note::
+            This method uses the :external+couchdb:http:delete:`/{db}/{docid}`
+            endpoint.
+
+            If you want to remove the data from the server, you'd need to use the
+            :ref:`_purge<couchdb:api/db/purge>` endpoint instead.
 
         :raises ~aiocouch.ConflictError: if the local data has changed without saving
         :raises ~aiocouch.ConflictError: if the local revision is different from the
