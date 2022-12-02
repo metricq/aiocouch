@@ -135,6 +135,9 @@ class Document(RemoteDocument):
 
         """
         if self._dirty_cache:
+            if "_deleted" in self:
+                del self["_deleted"]
+                del self["_rev"]
             data = await self._put(self._data)
             self._update_rev_after_save(data)
 
@@ -162,7 +165,9 @@ class Document(RemoteDocument):
                 f"Cannot delete document '{self.id}' from server, as the local cache "
                 "has unsaved changes."
             )
-        self._update_cache(await self._delete(rev=self["_rev"]))
+        response = await self._delete(rev=self["_rev"])
+
+        await self.fetch(discard_changes=True, rev=response["rev"])
 
     async def copy(self, new_id: str) -> "Document":
         """Create a copy of the document on the server
@@ -197,16 +202,26 @@ class Document(RemoteDocument):
 
     @property
     def data(self) -> Optional[JsonDict]:
-        """Returns the document as a dict
+        """Returns the last-known stored document body as a copied dict
+
+        In particular, the resulting dict will not contain the special keys ``_id`` and ``_rev``.
 
         If :func:`~aiocouch.document.Document.exists` is ``False``, this function returns ``None``.
 
         This method does not perform a network request.
 
-        :return: Returns the data of the document or ``None``
+        :return: Returns the body of the document or ``None``
 
         """
-        return self._data if self.exists else None
+
+        def filter_internal_keys(data: JsonDict) -> JsonDict:
+            return dict(
+                (key, value)
+                for (key, value) in data.items()
+                if key not in ["_id", "_rev"]
+            )
+
+        return filter_internal_keys(self._data) if self.exists else None
 
     @property
     def exists(self) -> bool:
