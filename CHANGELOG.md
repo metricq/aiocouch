@@ -1,3 +1,8 @@
+# v3.0.0
+
+- `Document.data` property doesn't contain `_id` and `_rev` anymore [Breaking change]
+- Added `Document.clear` and `Document.__len__` methods
+
 # v2.2.2
 
 - Fixed BasicAuth for UTF-8 encoded credentials
@@ -8,8 +13,8 @@
 
 # v2.2.0
 
-- Added support for /db/_changes endpoint, which allows to listen for change events
-- Added support for /db/_index endpoint, which allows to create indexes on databases
+- Added support for /db/\_changes endpoint, which allows to listen for change events
+- Added support for /db/\_index endpoint, which allows to create indexes on databases
 - Improved documentation
 
 # v2.1.1
