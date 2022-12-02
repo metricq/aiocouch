@@ -55,7 +55,7 @@ document, updating its contents, and finally saving the modified data to the ser
 
 .. code-block :: python
 
-    # get an Document instance
+    # get a Document instance
     doc = await database["existing_doc"]
 
     # update the document content
@@ -63,6 +63,32 @@ document, updating its contents, and finally saving the modified data to the ser
 
     # actually perform the request to save the modification to the server
     await doc.save()
+
+
+The document instance and the data property
+===========================================
+
+Generally speaking, a :class:`~aiocouch.document.Document` instance has the same interface
+as a Python dictionary. It has all the keys and their values that the corresponding document
+on the server had at the time of fetching. The :func:`~aiocouch.document.Document.data`
+property on the other hand only has the actual user-defined data of a document. Logically,
+it is a dictionary constructed from the document instance, but without the ``_id`` and
+``_rev`` entry. This is useful to copy the document content from one instance to another.
+
+.. code-block :: python
+    # get two Document instance
+    doc = await database["existing_doc"]
+    doc2 = await database["another_existing_doc"]
+
+    # update the document content
+    doc.clear()
+    doc.update(doc2.data)
+
+    # safe the change to the server
+    await doc.save()
+
+    # Now, the content of the "existing_doc" document is overwritten 
+    # with the content of the "another_existing_doc" document
 
 
 Using Async Context Managers
