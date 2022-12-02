@@ -280,6 +280,15 @@ class Document(RemoteDocument):
     def update(self, data: JsonDict) -> None:
         self._data.update(data)
 
+    def clear(self) -> None:
+        cleared_data = {"_id": self.id}
+        if self.rev:
+            cleared_data["_rev"] = self.rev
+        self._data = cleared_data
+
+    def __len__(self) -> int:
+        return len(self._data)
+
     def items(self) -> ItemsView[str, Any]:
         return self._data.items()
 
