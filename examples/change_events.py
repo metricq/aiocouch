@@ -6,7 +6,6 @@ from aiocouch.event import ChangedEvent, DeletedEvent
 
 
 async def main_with() -> None:
-
     async with CouchDB(
         "http://localhost:5984", user="admin", password="admin"
     ) as couchdb:
