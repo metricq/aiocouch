@@ -209,6 +209,22 @@ class Document(RemoteDocument):
         return self._data if self.exists else None
 
     @property
+    def json(self) -> JsonDict:
+        """Returns the document content as a JSON-like dict
+
+        In particular, all CouchDB-internal document keys will be omitted, e.g., ``_id``, ``_rev``
+        If :func:`~aiocouch.document.Document.exists` is ``False``, this function returns an empty dict.
+
+        This method does not perform a network request.
+        """
+
+        return (
+            {key: value for key, value in self._data.items() if not key.startswith("_")}
+            if self.exists
+            else {}
+        )
+
+    @property
     def exists(self) -> bool:
         """Denotes whether the document exists
 

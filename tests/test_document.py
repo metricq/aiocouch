@@ -446,3 +446,34 @@ async def test_security_document_context_manager(database: Database) -> None:
 
         assert sec_doc.admins is not None
         assert "elvis" not in sec_doc.admins
+
+
+async def test_data(doc: Document) -> None:
+    assert doc.data is None
+
+    await doc.save()
+
+    assert doc.data is not None
+
+    assert "_id" in doc.data.keys()
+    assert "_rev" in doc.data.keys()
+
+    assert len(doc.data.keys()) == 2
+
+    doc["zebra"] = "🦓"
+
+    assert "zebra" in doc.data.keys()
+
+
+async def test_json(doc: Document) -> None:
+    assert doc.json == {}
+
+    await doc.save()
+
+    assert "_id" not in doc.json.keys()
+    assert "_rev" not in doc.json.keys()
+
+    doc["zebra"] = "🦓"
+
+    assert doc.json != {}
+    assert "zebra" in doc.json
