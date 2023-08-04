@@ -477,3 +477,29 @@ async def test_json(doc: Document) -> None:
 
     assert doc.json != {}
     assert "zebra" in doc.json
+
+
+async def test_clone_with_json(filled_database: Database) -> None:
+    foo = await filled_database["foo"]
+
+    clone = await filled_database.create("clone", data=foo.json)
+
+    assert clone.id == "clone"
+    assert clone.rev is None
+    assert clone["bar"] == True
+    assert clone["bar2"] == 3
+
+    clone2 = Document(cast(Database, None), "clone2")
+    clone2.update(foo.json)
+
+    assert clone2.id == "clone2"
+    assert clone2.rev is None
+    assert clone2["bar"] == True
+    assert clone2["bar2"] == 3
+
+    clone3 = Document(cast(Database, None), "clone3", foo.json)
+
+    assert clone3.id == "clone3"
+    assert clone3.rev is None
+    assert clone3["bar"] == True
+    assert clone3["bar2"] == 3
