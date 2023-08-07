@@ -279,12 +279,25 @@ async def test_safe_deleted(filled_database: Database) -> None:
     assert doc.rev
     assert doc.rev.startswith("3-")
 
+    foo = await filled_database["foo"]
+    assert foo.data is not None
+
 
 async def test_copy(filled_database: Database) -> None:
     foo = await filled_database["foo"]
     assert foo.data is not None
 
-    foo_copy = await foo.copy("foo_copy")
+    response = await foo.copy("foo_copy")
+
+    assert response.status == 201
+    assert "Location" in response.headers
+    assert "Etag" in response.headers
+    assert response.etag is not None
+    assert response.etag.startswith("1-")
+
+    foo_copy = await filled_database.get("foo_copy", rev=response.etag)
+
+    assert response.status == 201
 
     assert foo_copy.data is not None
     assert foo_copy.data.keys() == foo.data.keys()
