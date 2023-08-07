@@ -7,7 +7,6 @@ async def main() -> None:
     async with CouchDB(
         "http://localhost:5984", user="admin", password="admin"
     ) as couchdb:
-
         elapsed_time = 0
 
         while True:
