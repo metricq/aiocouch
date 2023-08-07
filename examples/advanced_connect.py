@@ -5,7 +5,6 @@ from aiocouch import CouchDB
 
 # using the with statement, ensures a proper connection handling
 async def main_with() -> None:
-
     # connect using username and password as credentials
     async with CouchDB(
         "http://localhost:5984", user="admin", password="admin"

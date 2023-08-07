@@ -7,7 +7,6 @@ async def main_with() -> None:
     async with CouchDB(
         "http://localhost:5984", user="admin", password="admin"
     ) as couchdb:
-
         print((await couchdb.info())["version"])
 
         database = await couchdb["config"]

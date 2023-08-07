@@ -446,3 +446,60 @@ async def test_security_document_context_manager(database: Database) -> None:
 
         assert sec_doc.admins is not None
         assert "elvis" not in sec_doc.admins
+
+
+async def test_data(doc: Document) -> None:
+    assert doc.data is None
+
+    await doc.save()
+
+    assert doc.data is not None
+
+    assert "_id" in doc.data.keys()
+    assert "_rev" in doc.data.keys()
+
+    assert len(doc.data.keys()) == 2
+
+    doc["zebra"] = "🦓"
+
+    assert "zebra" in doc.data.keys()
+
+
+async def test_json(doc: Document) -> None:
+    assert doc.json == {}
+
+    await doc.save()
+
+    assert "_id" not in doc.json.keys()
+    assert "_rev" not in doc.json.keys()
+
+    doc["zebra"] = "🦓"
+
+    assert doc.json != {}
+    assert "zebra" in doc.json
+
+
+async def test_clone_with_json(filled_database: Database) -> None:
+    foo = await filled_database["foo"]
+
+    clone = await filled_database.create("clone", data=foo.json)
+
+    assert clone.id == "clone"
+    assert clone.rev is None
+    assert clone["bar"] == True
+    assert clone["bar2"] == 3
+
+    clone2 = Document(cast(Database, None), "clone2")
+    clone2.update(foo.json)
+
+    assert clone2.id == "clone2"
+    assert clone2.rev is None
+    assert clone2["bar"] == True
+    assert clone2["bar2"] == 3
+
+    clone3 = Document(cast(Database, None), "clone3", foo.json)
+
+    assert clone3.id == "clone3"
+    assert clone3.rev is None
+    assert clone3["bar"] == True
+    assert clone3["bar2"] == 3
