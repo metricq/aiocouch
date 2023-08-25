@@ -1,3 +1,11 @@
+# v3.0.0
+
+- Added support for /db/_purge endpoint, which allows to remove all references to a document
+- Added `Document.json` property, which is a dict representing the document data
+- Added `HTTPResponse` as return from certain `Document` endpoints that may give 202 Accepted HTTP status codes
+- Improved documentation
+- [BREAKING] `Document.clone()` no longer returns the cloned document
+
 # v2.2.2
 
 - Fixed BasicAuth for UTF-8 encoded credentials
