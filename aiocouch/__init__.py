@@ -41,6 +41,7 @@ from .exception import (
     UnauthorizedError,
     UnsupportedMediaTypeError,
 )
+from .remote import HTTPResponse
 from .view import View
 
 __all__ = [
@@ -48,6 +49,7 @@ __all__ = [
     "Database",
     "Document",
     "View",
+    "HTTPResponse",
     "BadRequestError",
     "ConflictError",
     "UnauthorizedError",

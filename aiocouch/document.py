@@ -38,7 +38,7 @@ from deprecated import deprecated
 from . import database
 from .attachment import Attachment
 from .exception import ConflictError, ForbiddenError, NotFoundError, raises
-from .remote import RemoteDocument
+from .remote import HTTPResponse, RemoteDocument
 from .typing import JsonDict
 
 
@@ -127,18 +127,27 @@ class Document(RemoteDocument):
         else:
             self._update_cache(await self._get())
 
-    async def save(self) -> None:
+    async def save(self) -> Optional[HTTPResponse]:
         """Saves the current state to the CouchDB server
+
+        Only sends a request, if the local state has been changed since the
+        retrieval of the document data.
 
         :raises ~aiocouch.ConflictError: if the local revision is different from the
             server. See `Conflict handling`_.
 
+        :return: If a successful request was made, returns the
+            :class:`~aiocouch.remote.HTTPResponse` instance.
+
         """
         if self._dirty_cache:
-            data = await self._put(self._data)
+            response, data = await self._put(self._data)
             self._update_rev_after_save(data)
+            return response
 
-    async def delete(self, discard_changes: bool = False) -> None:
+        return None
+
+    async def delete(self, discard_changes: bool = False) -> HTTPResponse:
         """Marks the document as deleted on the server
 
         Calling this method deletes the local data and marks document as deleted on
@@ -156,26 +165,41 @@ class Document(RemoteDocument):
         :raises ~aiocouch.ConflictError: if the local revision is different from the
             server. See `Conflict handling`_.
 
+        :return: If the request succeeded, returns the
+            :class:`~aiocouch.remote.HTTPResponse` instance.
+
         """
         if self._dirty_cache and not discard_changes:
             raise ConflictError(
                 f"Cannot delete document '{self.id}' from server, as the local cache "
                 "has unsaved changes."
             )
-        self._update_cache(await self._delete(rev=self["_rev"]))
 
-    async def copy(self, new_id: str) -> "Document":
+        response, data = await self._delete(rev=self["_rev"])
+        self._update_cache(data)
+
+        return response
+
+    async def copy(self, new_id: str) -> HTTPResponse:
         """Create a copy of the document on the server
 
         Creates a new document with the data currently stored on the server.
 
+        .. note::
+            This method uses the :external+couchdb:http:copy:`/{db}/{docid}`
+            endpoint.
+
+            If you need to know the `rev` of the created document, use the
+            `Etag` header entry.
+
         :param new_id: the id of the new document
-        :return: an instance for the new document after it was copied
+        :return: If the request succeeded, returns the
+            :class:`~aiocouch.remote.HTTPResponse` instance.
 
         """
-        await self._copy(new_id)
+        response, _ = await self._copy(new_id)
 
-        return await self._database[new_id]
+        return response
 
     @property
     def rev(self) -> Optional[str]:

@@ -31,7 +31,7 @@
 import asyncio
 import json
 from contextlib import suppress
-from typing import Any, AsyncGenerator, List, Optional, Tuple, Union, cast
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import quote
 
 import aiohttp
@@ -40,7 +40,27 @@ from . import database, document
 from .exception import NotFoundError, generator_raises, raises
 from .typing import JsonDict
 
-RequestResult = Tuple[JsonDict, Union[bytes, JsonDict]]
+
+class HTTPResponse:
+    """Represents an HTTP response from the CouchDB server."""
+
+    status: int
+    """The HTTP response status, usually 200, 201 or 202"""
+
+    headers: Dict[str, str]
+    """The HTTP headers of the response"""
+
+    def __init__(self, resp: aiohttp.client.ClientResponse):
+        self.status = resp.status
+        self.headers = dict(resp.headers)
+
+    @property
+    def etag(self) -> Optional[str]:
+        """Convenient property to access the ETag header in a usable format"""
+        return self.headers["Etag"][1:-1] if "Etag" in self.headers else None
+
+
+RequestResult = Tuple[HTTPResponse, Union[bytes, JsonDict]]
 
 
 def _quote_id(id: str) -> str:
@@ -77,7 +97,6 @@ class RemoteServer:
         auth = aiohttp.BasicAuth(user, password, "utf-8") if user and password else None
         headers = {"Cookie": "AuthSession=" + cookie} if cookie else None
         self._http_session = aiohttp.ClientSession(headers=headers, auth=auth, **kwargs)
-        # self._databases = {}
 
     async def _get(self, path: str, params: Optional[JsonDict] = None) -> RequestResult:
         return await self._request("GET", path, params=params)
@@ -143,7 +162,7 @@ class RemoteServer:
         ) as resp:
             resp.raise_for_status()
             return (
-                cast(JsonDict, resp.headers),
+                HTTPResponse(resp),
                 await resp.json() if return_json else await resp.read(),
             )
 
@@ -340,9 +359,13 @@ class RemoteDocument:
     @raises(403, "Read privilege required for document '{id}'")
     @raises(404, "Document {id} was not found")
     async def _info(self) -> JsonDict:
-        headers, _ = await self._database._remote._head(self.endpoint)
+        response, _ = await self._database._remote._head(self.endpoint)
         assert self._data is not None
-        return {"ok": True, "id": self._data["_id"], "rev": headers["Etag"][1:-1]}
+        return {
+            "ok": True,
+            "id": self._data["_id"],
+            "rev": response.headers["Etag"][1:-1],
+        }
 
     async def _exists(self) -> bool:
         try:
@@ -369,10 +392,12 @@ class RemoteDocument:
         "Document with the specified ID ({id}) already exists or specified revision "
         "{rev} is not latest for target document",
     )
-    async def _put(self, data: JsonDict, **params: Any) -> JsonDict:
-        _, json = await self._database._remote._put(self.endpoint, data, params)
+    async def _put(
+        self, data: JsonDict, **params: Any
+    ) -> Tuple[HTTPResponse, JsonDict]:
+        response, json = await self._database._remote._put(self.endpoint, data, params)
         assert not isinstance(json, bytes)
-        return json
+        return (response, json)
 
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Write privilege required for document '{id}'")
@@ -381,11 +406,11 @@ class RemoteDocument:
     @raises(
         409, "Specified revision ({rev}) is not the latest for target document '{id}'"
     )
-    async def _delete(self, rev: str, **params: Any) -> JsonDict:
+    async def _delete(self, rev: str, **params: Any) -> Tuple[HTTPResponse, JsonDict]:
         params["rev"] = rev
-        _, json = await self._database._remote._delete(self.endpoint, params)
+        response, json = await self._database._remote._delete(self.endpoint, params)
         assert not isinstance(json, bytes)
-        return json
+        return (response, json)
 
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Read or write privileges required")
@@ -398,12 +423,14 @@ class RemoteDocument:
         "Document with the specified ID already exists or specified revision is not "
         "latest for target document",
     )
-    async def _copy(self, destination: str, **params: Any) -> JsonDict:
-        _, json = await self._database._remote._request(
+    async def _copy(
+        self, destination: str, **params: Any
+    ) -> Tuple[HTTPResponse, JsonDict]:
+        response, json = await self._database._remote._request(
             "COPY", self.endpoint, params=params, headers={"Destination": destination}
         )
         assert not isinstance(json, bytes)
-        return json
+        return (response, json)
 
 
 class RemoteAttachment:
@@ -420,10 +447,10 @@ class RemoteAttachment:
     @raises(403, "Read privilege required for document '{document_id}'")
     async def _exists(self) -> bool:
         try:
-            headers, _ = await self._document._database._remote._head(
+            response, _ = await self._document._database._remote._head(
                 self.endpoint, return_json=False
             )
-            self.content_type = headers["Content-Type"]
+            self.content_type = response.headers["Content-Type"]
             return True
         except aiohttp.ClientResponseError as e:
             if e.status == 404:
@@ -436,10 +463,10 @@ class RemoteAttachment:
     @raises(403, "Read privilege required for document '{document_id}'")
     @raises(404, "Document '{document_id}' or attachment '{id}' doesn't exists")
     async def _get(self, **params: Any) -> bytes:
-        headers, data = await self._document._database._remote._get_bytes(
+        response, data = await self._document._database._remote._get_bytes(
             self.endpoint, params
         )
-        self.content_type = headers["Content-Type"]
+        self.content_type = response.headers["Content-Type"]
         assert isinstance(data, bytes)
         return data
 

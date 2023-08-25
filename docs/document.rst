@@ -171,3 +171,6 @@ Reference
 
 .. autoclass:: aiocouch.document.Document
     :members:
+
+.. autoclass:: aiocouch.remote.HTTPResponse
+    :members:
