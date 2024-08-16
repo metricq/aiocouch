@@ -78,7 +78,7 @@ class CouchDB:
         await self._server.close()
 
     async def create(
-        self, id: str, exists_ok: bool = False, **kwargs: Any
+        self, id: str, exists_ok: bool = False, **params: Any
     ) -> "Database":
         """Creates a new database on the server
 
@@ -87,12 +87,15 @@ class CouchDB:
 
         :param id: the identifier of the database
         :param exists_ok: If ``True``, don't raise if the database exists
+        :param params: accepts query parameters to :external+couchdb:http:put:`/{db}`
+                       as keyword arguments
+
         :return: Returns a representation for the created database
 
         """
         db = Database(self, id)
         try:
-            await db._put(**kwargs)
+            await db._put(**params)
         except PreconditionFailedError as e:
             if not exists_ok:
                 raise e

@@ -246,7 +246,7 @@ class RemoteDatabase:
     @raises(401, "CouchDB Server Administrator privileges required")
     @raises(412, "Database already exists")
     async def _put(self, **params: Any) -> JsonDict:
-        _, json = await self._remote._put(self.endpoint)
+        _, json = await self._remote._put(self.endpoint, params=params)
         assert not isinstance(json, bytes)
         return json
 

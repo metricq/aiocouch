@@ -46,6 +46,20 @@ async def test_create_for_existing_but_mismatching_params(
         await couchdb.create(database.id, partitioned=True)
 
 
+async def test_create_with_param(couchdb: CouchDB, database: Database) -> None:
+    info = await database.info()
+    assert info["cluster"]["q"] == 8
+    await database.delete()
+
+    database = await couchdb.create(
+        database.id,
+        q=16,
+    )
+
+    info = await database.info()
+    assert info["cluster"]["q"] == 16
+
+
 async def test_create_for_existing_ok_with_race(
     couchdb: CouchDB, database_id: str
 ) -> None:
