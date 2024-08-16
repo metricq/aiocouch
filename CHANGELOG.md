@@ -1,3 +1,8 @@
+# v3.0.1
+
+- Fixed lost query params in database create method
+- Added Python 3.12 and CouchDB 3.3 to test matrix
+
 # v3.0.0
 
 - Added support for /db/_purge endpoint, which allows to remove all references to a document
