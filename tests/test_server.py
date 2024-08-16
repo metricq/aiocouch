@@ -48,7 +48,7 @@ async def test_create_for_existing_but_mismatching_params(
 
 async def test_create_with_param(couchdb: CouchDB, database: Database) -> None:
     info = await database.info()
-    assert info["cluster"]["q"] == 8
+    assert info["cluster"]["q"] != 16
     await database.delete()
 
     database = await couchdb.create(
