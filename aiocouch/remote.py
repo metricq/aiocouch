@@ -37,7 +37,7 @@ from urllib.parse import quote
 import aiohttp
 
 from . import database, document
-from .exception import NotFoundError, generator_raises, raises
+from .exception import NotFoundError, RemoteResponseError, generator_raises, raises
 from .typing import JsonDict
 
 
@@ -160,7 +160,21 @@ class RemoteServer:
         async with self._http_session.request(
             method, url=f"{self._server}{path}", **kwargs
         ) as resp:
-            resp.raise_for_status()
+            reason = None
+            with suppress(Exception):
+                reason = (await resp.json())["reason"]
+            try:
+                resp.raise_for_status()
+            except aiohttp.ClientResponseError:
+                raise RemoteResponseError(
+                    reason,
+                    resp.request_info,
+                    resp.history,
+                    status=resp.status,
+                    message=resp.reason,
+                    headers=resp.headers,
+                )
+
             return (
                 HTTPResponse(resp),
                 await resp.json() if return_json else await resp.read(),
@@ -179,7 +193,17 @@ class RemoteServer:
         async with self._http_session.request(
             method, url=f"{self._server}{path}", **kwargs
         ) as resp:
-            resp.raise_for_status()
+            try:
+                resp.raise_for_status()
+            except aiohttp.ClientResponseError:
+                raise RemoteResponseError(
+                    None,
+                    resp.request_info,
+                    resp.history,
+                    status=resp.status,
+                    message=resp.reason,
+                    headers=resp.headers,
+                )
 
             async for line in resp.content:
                 # this should only happen for empty lines
@@ -187,6 +211,7 @@ class RemoteServer:
                     yield json.loads(line)
 
     @raises(401, "Invalid credentials")
+    @raises(403, "Access forbidden: {reason}")
     async def _all_dbs(self, **params: Any) -> List[str]:
         _, json = await self._get("/_all_dbs", params)
         assert not isinstance(json, bytes)
@@ -203,12 +228,14 @@ class RemoteServer:
         await asyncio.sleep(0.250 if has_ssl_conn else 0)
 
     @raises(401, "Invalid credentials")
+    @raises(403, "Access forbidden: {reason}")
     async def _info(self) -> JsonDict:
         _, json = await self._get("/")
         assert not isinstance(json, bytes)
         return json
 
     @raises(401, "Authentication failed, check provided credentials.")
+    @raises(403, "Access forbidden: {reason}")
     async def _check_session(self) -> RequestResult:
         return await self._get("/_session")
 
@@ -223,19 +250,19 @@ class RemoteDatabase:
         return f"/{_quote_id(self.id)}"
 
     @raises(401, "Invalid credentials")
-    @raises(403, "Read permission required")
+    @raises(403, "Access forbidden: {reason}")
     async def _exists(self) -> bool:
         try:
             await self._remote._head(self.endpoint)
             return True
-        except aiohttp.ClientResponseError as e:
+        except RemoteResponseError as e:
             if e.status == 404:
                 return False
             else:
                 raise e
 
     @raises(401, "Invalid credentials")
-    @raises(403, "Read permission required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Requested database not found ({id})")
     async def _get(self) -> JsonDict:
         _, json = await self._remote._get(self.endpoint)
@@ -244,6 +271,7 @@ class RemoteDatabase:
 
     @raises(400, "Invalid database name")
     @raises(401, "CouchDB Server Administrator privileges required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(412, "Database already exists")
     async def _put(self, **params: Any) -> JsonDict:
         _, json = await self._remote._put(self.endpoint, params=params)
@@ -252,13 +280,14 @@ class RemoteDatabase:
 
     @raises(400, "Invalid database name or forgotten document id by accident")
     @raises(401, "CouchDB Server Administrator privileges required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Database doesn't exist or invalid database name ({id})")
     async def _delete(self) -> None:
         await self._remote._delete(self.endpoint)
 
     @raises(400, "The request provided invalid JSON data or invalid query parameter")
     @raises(401, "Read permission required")
-    @raises(403, "Read permission required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Invalid database name")
     @raises(415, "Bad Content-Type value")
     async def _bulk_get(self, docs: List[str], **params: Any) -> JsonDict:
@@ -270,7 +299,7 @@ class RemoteDatabase:
 
     @raises(400, "The request provided invalid JSON data")
     @raises(401, "Invalid credentials")
-    @raises(403, "Write permission required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(417, "At least one document was rejected by the validation function")
     async def _bulk_docs(self, docs: List[JsonDict], **data: Any) -> JsonDict:
         data["docs"] = docs
@@ -280,7 +309,7 @@ class RemoteDatabase:
 
     @raises(400, "Invalid request")
     @raises(401, "Read privilege required for document '{id}'")
-    @raises(403, "Read permission required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(500, "Query execution failed", RuntimeError)
     async def _find(self, selector: Any, **data: Any) -> JsonDict:
         data["selector"] = selector
@@ -290,6 +319,7 @@ class RemoteDatabase:
 
     @raises(400, "Invalid request")
     @raises(401, "Admin permission required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Database not found")
     @raises(500, "Execution error")
     async def _index(self, index: JsonDict, **data: Any) -> JsonDict:
@@ -299,20 +329,21 @@ class RemoteDatabase:
         return json
 
     @raises(401, "Invalid credentials")
-    @raises(403, "Permission required")
+    @raises(403, "Access forbidden: {reason}")
     async def _get_security(self) -> JsonDict:
         _, json = await self._remote._get(f"{self.endpoint}/_security")
         assert not isinstance(json, bytes)
         return json
 
     @raises(401, "Invalid credentials")
-    @raises(403, "Permission required")
+    @raises(403, "Access forbidden: {reason}")
     async def _put_security(self, doc: JsonDict) -> JsonDict:
         _, json = await self._remote._put(f"{self.endpoint}/_security", doc)
         assert not isinstance(json, bytes)
         return json
 
     @generator_raises(400, "Invalid request")
+    @generator_raises(403, "Access forbidden: {reason}")
     async def _changes(self, **params: Any) -> AsyncGenerator[JsonDict, None]:
         if "feed" in params and params["feed"] == "continuous":
             params.setdefault("heartbeat", True)
@@ -329,6 +360,7 @@ class RemoteDatabase:
                 yield result
 
     @raises(400, "Invalid database or JSON payload")
+    @raises(403, "Access forbidden: {reason}")
     @raises(415, "Bad Content-Type header value")
     @raises(500, "Internal server error or timeout")
     async def _purge(self, docs: JsonDict, **params: Any) -> JsonDict:
@@ -350,13 +382,13 @@ class RemoteDocument:
         return f"{self._database.endpoint}/{_quote_id(self.id)}"
 
     @raises(401, "Read privilege required for document '{id}'")
-    @raises(403, "Read privilege required for document '{id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Document {id} was not found")
     async def _head(self) -> None:
         await self._database._remote._head(self.endpoint)
 
     @raises(401, "Read privilege required for document '{id}'")
-    @raises(403, "Read privilege required for document '{id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Document {id} was not found")
     async def _info(self) -> JsonDict:
         response, _ = await self._database._remote._head(self.endpoint)
@@ -376,7 +408,7 @@ class RemoteDocument:
 
     @raises(400, "The format of the request or revision was invalid")
     @raises(401, "Read privilege required for document '{id}'")
-    @raises(403, "Read privilege required for document '{id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Document {id} was not found")
     async def _get(self, **params: Any) -> JsonDict:
         _, json = await self._database._remote._get(self.endpoint, params)
@@ -385,7 +417,7 @@ class RemoteDocument:
 
     @raises(400, "The format of the request or revision was invalid")
     @raises(401, "Write privilege required for document '{id}'")
-    @raises(403, "Write privilege required for document '{id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Specified database or document ID doesn't exists ({endpoint})")
     @raises(
         409,
@@ -401,7 +433,7 @@ class RemoteDocument:
 
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Write privilege required for document '{id}'")
-    @raises(403, "Write privilege required for document '{id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Specified database or document ID doesn't exists ({endpoint})")
     @raises(
         409, "Specified revision ({rev}) is not the latest for target document '{id}'"
@@ -414,7 +446,7 @@ class RemoteDocument:
 
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Read or write privileges required")
-    @raises(403, "Read or write privileges required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(
         404, "Specified database, document ID or revision doesn't exists ({endpoint})"
     )
@@ -434,7 +466,7 @@ class RemoteDocument:
 
     @raises(400, "The format of the request or revision was invalid")
     @raises(401, "Read privilege required for document '{id}'")
-    @raises(403, "Read privilege required for document '{id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Document {id} was not found")
     async def _conflicts(self) -> List[str]:
         json = await self._get(conflicts=True)
@@ -443,7 +475,7 @@ class RemoteDocument:
 
     @raises(400, "The format of the request or revision was invalid")
     @raises(401, "Read privilege required for document '{id}'")
-    @raises(403, "Read privilege required for document '{id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Document {id} was not found")
     async def _revs(self) -> List[str]:
         json = await self._get(revs_info=True)
@@ -462,7 +494,7 @@ class RemoteAttachment:
         return f"{self._document.endpoint}/{_quote_id(self.id)}"
 
     @raises(401, "Read privilege required for document '{document_id}'")
-    @raises(403, "Read privilege required for document '{document_id}'")
+    @raises(403, "Access forbidden: {reason}")
     async def _exists(self) -> bool:
         try:
             response, _ = await self._document._database._remote._head(
@@ -470,7 +502,7 @@ class RemoteAttachment:
             )
             self.content_type = response.headers["Content-Type"]
             return True
-        except aiohttp.ClientResponseError as e:
+        except RemoteResponseError as e:
             if e.status == 404:
                 return False
             else:
@@ -478,7 +510,7 @@ class RemoteAttachment:
 
     @raises(400, "Invalid request parameters")
     @raises(401, "Read privilege required for document '{document_id}'")
-    @raises(403, "Read privilege required for document '{document_id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Document '{document_id}' or attachment '{id}' doesn't exists")
     async def _get(self, **params: Any) -> bytes:
         response, data = await self._document._database._remote._get_bytes(
@@ -490,7 +522,7 @@ class RemoteAttachment:
 
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Write privilege required for document '{document_id}'")
-    @raises(403, "Write privilege required for document '{document_id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Document '{document_id}' doesn't exists")
     @raises(
         409, "Specified revision {document_rev} is not the latest for target document"
@@ -508,7 +540,7 @@ class RemoteAttachment:
 
     @raises(400, "Invalid request body or parameters")
     @raises(401, "Write privilege required for document '{document_id}'")
-    @raises(403, "Write privilege required for document '{document_id}'")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Specified database or document ID doesn't exists ({endpoint})")
     @raises(
         409, "Specified revision {document_rev} is not the latest for target document"
@@ -537,7 +569,7 @@ class RemoteView:
 
     @raises(400, "Invalid request")
     @raises(401, "Read privileges required")
-    @raises(403, "Read privileges required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Specified database, design document or view is missing")
     async def _get(self, **params: Any) -> JsonDict:
         _, json = await self._database._remote._get(self.endpoint, params)
@@ -546,7 +578,7 @@ class RemoteView:
 
     @raises(400, "Invalid request")
     @raises(401, "Write privileges required")
-    @raises(403, "Write privileges required")
+    @raises(403, "Access forbidden: {reason}")
     @raises(404, "Specified database, design document or view is missing")
     async def _post(self, keys: List[str], **params: Any) -> JsonDict:
         _, json = await self._database._remote._post(
