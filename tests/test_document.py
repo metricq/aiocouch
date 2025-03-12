@@ -157,7 +157,7 @@ async def test_save_with_data(database: Database) -> None:
     assert doc._dirty_cache is False
 
 
-async def test_conflict(filled_database: Database) -> None:
+async def test_save_fail_on_conflict(filled_database: Database) -> None:
     doc1 = await filled_database["foo"]
     doc2 = await filled_database["foo"]
 
@@ -169,8 +169,11 @@ async def test_conflict(filled_database: Database) -> None:
     with pytest.raises(ConflictError):
         await doc2.save()
 
+    conflicts = await doc1.conflicts()
+    assert conflicts == []
 
-async def test_conflict_without_rev(database: Database) -> None:
+
+async def test_save_fail_on_conflict_without_rev(database: Database) -> None:
     doc1 = await database.create("fou")
     doc2 = await database.create("fou")
 
@@ -190,6 +193,9 @@ async def test_conflict_without_rev(database: Database) -> None:
 
     assert doc2.rev is None
 
+    conflicts = await doc1.conflicts()
+    assert conflicts == []
+
 
 async def test_override_conflict(database: Database) -> None:
     doc1 = await database.create("fou")
@@ -207,10 +213,65 @@ async def test_override_conflict(database: Database) -> None:
         doc2.rev = doc1.rev
         await doc2.save()
 
+    conflicts = await doc2.conflicts()
+    assert conflicts == []
+
     doc3 = await database["fou"]
     assert doc3.rev is not None
     assert doc3.rev.startswith("2-")
     assert doc3["blub"] == "bar"
+
+    conflicts = await doc3.conflicts()
+    assert conflicts == []
+
+
+async def test_list_conflicts(database: Database) -> None:
+    doc = await database.create("conflicted")
+
+    doc["v"] = "1"
+    await doc.save()
+    assert doc.rev is not None
+    assert doc.rev.startswith("1-")
+
+    doc["v"] = "2"
+    await doc.save()
+    assert doc.rev.startswith("2-")
+
+    doc.rev = "1-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    doc["v"] = "1a"
+    await doc._put(doc._data, new_edits=False)
+
+    conflicts = await doc.conflicts()
+    assert conflicts == ["1-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+
+    doc.rev = "1-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+    doc["v"] = "1z"
+    await doc._put(doc._data, new_edits=False)
+
+    conflicts = await doc.conflicts()
+    assert conflicts == [
+        "1-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "1-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+    ]
+
+    doc1a = await database.get("conflicted", rev="1-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    await doc1a.delete()
+
+    conflicts = await doc.conflicts()
+    assert conflicts == [
+        "1-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+    ]
+
+    await doc.fetch(discard_changes=True)
+    assert doc.rev.startswith("2-")
+    await doc.delete()
+
+    doc = await database.get("conflicted")
+    assert doc.rev == "1-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+    assert doc["v"] == "1z"
+
+    conflicts = await doc.conflicts()
+    assert conflicts == []
 
 
 async def test_update(filled_database: Database) -> None:
