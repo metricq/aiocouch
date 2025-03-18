@@ -105,7 +105,7 @@ jobs:
       - name: Build Python distribution
         run: python setup.py sdist bdist_wheel
       - name: Upload distribution artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: distribution-packages
           path: dist/
