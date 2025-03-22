@@ -281,6 +281,21 @@ class Document(RemoteDocument):
         """
         return await self._info()
 
+    async def conflicts(self) -> List[str]:
+        """Returns conflicting revisions for the document.
+
+        This method sends a request to the server to retrieve unresolved
+        conflicts for the document.
+
+        An empty array means that there is no unresolved conflicts.
+
+        :raises ~aiocouch.NotFoundError: if the document does not exist on the server
+
+        :return: An array containing the conflicting revisions of the document on the server
+
+        """
+        return await self._conflicts()
+
     def _update_rev_after_save(self, data: JsonDict) -> None:
         with suppress(KeyError):
             self._data["_rev"] = data["rev"]
