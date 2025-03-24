@@ -274,6 +274,30 @@ async def test_list_conflicts(database: Database) -> None:
     assert conflicts == []
 
 
+async def test_list_revs(database: Database) -> None:
+    doc = await database.create("revisions")
+
+    assert doc.rev is None
+    with pytest.raises(NotFoundError):
+        await doc.revs()
+
+    doc["v"] = "1"
+    await doc.save()
+    assert doc.rev is not None
+    assert doc.rev.startswith("1-")
+    revs = await doc.revs()
+    assert revs == ["1-806db366bc1ba3ebef40f4b7c63a53af"]
+
+    doc["v"] = "2"
+    await doc.save()
+    assert doc.rev.startswith("2-")
+    revs = await doc.revs()
+    assert revs == [
+        "2-8ef50bd631ee32d350edd37cd66f2e31",
+        "1-806db366bc1ba3ebef40f4b7c63a53af",
+    ]
+
+
 async def test_update(filled_database: Database) -> None:
     doc = await filled_database["foo"]
 

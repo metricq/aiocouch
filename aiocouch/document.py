@@ -296,6 +296,19 @@ class Document(RemoteDocument):
         """
         return await self._conflicts()
 
+    async def revs(self) -> List[str]:
+        """Returns the list of all known revisions for the document.
+
+        This method sends a request to the server to retrieve known
+        revisions for the document.
+
+        :raises ~aiocouch.NotFoundError: if the document does not exist on the server
+
+        :return: An array containing the known revisions of the document on the server
+
+        """
+        return await self._revs()
+
     def _update_rev_after_save(self, data: JsonDict) -> None:
         with suppress(KeyError):
             self._data["_rev"] = data["rev"]
