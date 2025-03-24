@@ -441,6 +441,15 @@ class RemoteDocument:
         assert not isinstance(json, bytes)
         return cast(List[str], json.get("_conflicts", []))
 
+    @raises(400, "The format of the request or revision was invalid")
+    @raises(401, "Read privilege required for document '{id}'")
+    @raises(403, "Read privilege required for document '{id}'")
+    @raises(404, "Document {id} was not found")
+    async def _revs(self) -> List[str]:
+        json = await self._get(revs_info=True)
+        assert not isinstance(json, bytes)
+        return cast(List[str], [item["rev"] for item in json.get("_revs_info", [])])
+
 
 class RemoteAttachment:
     def __init__(self, document: "document.Document", id: str):
