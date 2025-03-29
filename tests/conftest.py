@@ -45,7 +45,7 @@ async def couchdb_utf8_user_account(couchdb: CouchDB) -> AsyncGenerator[CouchDB,
 
 
 @pytest.fixture
-async def couchdb(event_loop: Any) -> AsyncGenerator[CouchDB, None]:
+async def couchdb() -> AsyncGenerator[CouchDB, None]:
     import asyncio
     import os
 
@@ -67,7 +67,7 @@ async def couchdb(event_loop: Any) -> AsyncGenerator[CouchDB, None]:
         password = ""
 
     async with CouchDB(
-        hostname, user=user, password=password, loop=event_loop
+        hostname, user=user, password=password, loop=asyncio.get_event_loop()
     ) as couchdb:
         yield couchdb
 
