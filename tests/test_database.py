@@ -136,9 +136,7 @@ async def test_akeys_with_prefix(filled_database: Database) -> None:
 
 
 async def test_akeys_with_ids(filled_database: Database) -> None:
-    keys = [
-        key async for key in filled_database.akeys(ids=["foo", "baz", "halloween"])
-    ]
+    keys = [key async for key in filled_database.akeys(ids=["foo", "baz", "halloween"])]
 
     assert len(keys) == 2
     assert keys == ["foo", "baz"]

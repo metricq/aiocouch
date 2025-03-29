@@ -174,6 +174,7 @@ async def test_view_get_with_keys(
     assert len(keys) == 1
     assert keys[0] == "baz"
 
+
 async def test_view_get_with_key(
     filled_database_with_view: Database,
 ) -> None:
