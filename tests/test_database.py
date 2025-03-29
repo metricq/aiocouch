@@ -135,9 +135,9 @@ async def test_akeys_with_prefix(filled_database: Database) -> None:
     assert (sorted(keys)) == ["baz", "baz2"]
 
 
-async def test_akeys_with_keys(filled_database: Database) -> None:
+async def test_akeys_with_ids(filled_database: Database) -> None:
     keys = [
-        key async for key in filled_database.akeys(keys=["foo", "baz", "halloween"])
+        key async for key in filled_database.akeys(ids=["foo", "baz", "halloween"])
     ]
 
     assert len(keys) == 2

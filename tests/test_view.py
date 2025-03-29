@@ -36,6 +36,21 @@ async def test_null_view_ids(filled_database_with_view: Database) -> None:
     assert values[3] == "foo2"
 
 
+async def test_null_view_ids(filled_database_with_view: Database) -> None:
+    values = [
+        key
+        async for key in filled_database_with_view.view("test_ddoc", "null_view").ids(
+            ids=["baz", "baz2", "foo", "not_existing"]
+        )
+    ]
+
+    assert len(values) == 3
+
+    assert values[0] == "baz"
+    assert values[1] == "baz2"
+    assert values[2] == "foo"
+
+
 async def test_null_view_docs(filled_database_with_view: Database) -> None:
     values = [
         doc.id
@@ -120,3 +135,56 @@ async def test_view_response_contains_update_seq(
     )
 
     assert response.update_seq is not None
+
+
+async def test_view_keys_param_rejected(
+    filled_database_with_view: Database,
+) -> None:
+    view = filled_database_with_view.view("test_ddoc", "null_view")
+
+    with pytest.raises(AttributeError):
+        async for doc in view.docs(key='"baz"'):
+            pass
+
+    with pytest.raises(AttributeError):
+        async for id in view.ids(key='"baz"'):
+            pass
+
+    with pytest.raises(AttributeError):
+        async for doc in view.docs(keys='["baz"]'):
+            pass
+
+    with pytest.raises(AttributeError):
+        async for id in view.ids(keys='["baz"]'):
+            pass
+
+
+async def test_view_get_with_keys(
+    filled_database_with_view: Database,
+) -> None:
+    # Note: This directly uses the get method of the View to provide the key
+    # and keys request query parameter. You likely don't want to do this. Use
+    # the ids() or docs() method with the ids parameter instead.
+
+    view = filled_database_with_view.view("test_ddoc", "null_view")
+    response = await view.get(keys='["baz"]')
+
+    keys = [id for id in response.keys()]
+
+    assert len(keys) == 1
+    assert keys[0] == "baz"
+
+async def test_view_get_with_key(
+    filled_database_with_view: Database,
+) -> None:
+    # Note: This directly uses the get method of the View to provide the key
+    # and keys request query parameter. You likely don't want to do this. Use
+    # the ids() or docs() method with the ids parameter instead.
+
+    view = filled_database_with_view.view("test_ddoc", "null_view")
+    response = await view.get(key='"baz"')
+
+    keys = [id for id in response.keys()]
+
+    assert len(keys) == 1
+    assert keys[0] == "baz"

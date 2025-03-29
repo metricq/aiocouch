@@ -97,9 +97,9 @@ class View(RemoteView):
     async def get(self, **params: Any) -> ViewResponse:
         return ViewResponse(_database=self._database, **(await self._get(**params)))
 
-    async def post(self, ids: List[str], **params: Any) -> ViewResponse:
+    async def post(self, keys: List[str], **params: Any) -> ViewResponse:
         return ViewResponse(
-            _database=self._database, **(await self._post(ids, **params))
+            _database=self._database, **(await self._post(keys=keys, **params))
         )
 
     async def akeys(self, **params: Any) -> AsyncGenerator[str, None]:
@@ -116,16 +116,22 @@ class View(RemoteView):
 
     async def ids(
         self,
-        keys: Optional[List[str]] = None,
+        ids: Optional[List[str]] = None,
         prefix: Optional[str] = None,
         **params: Any,
     ) -> AsyncGenerator[str, None]:
+        if "keys" in params:
+            raise AttributeError("keys param is not allowed, use ids instead")
+
+        if "key" in params:
+            raise AttributeError("key param is not allowed, use ids instead")
+
         if prefix is not None:
             params["startkey"] = f'"{prefix}"'
             params["endkey"] = f'"{prefix}{self.prefix_sentinel}"'
 
         response = await (
-            self.get(**params) if keys is None else self.post(keys, **params)
+            self.get(**params) if ids is None else self.post(keys=ids, **params)
         )
 
         for key in response.keys():
@@ -139,6 +145,12 @@ class View(RemoteView):
         include_ddocs: bool = False,
         **params: Any,
     ) -> AsyncGenerator[Document, None]:
+        if "keys" in params:
+            raise AttributeError("keys param is not allowed, use ids instead")
+
+        if "key" in params:
+            raise AttributeError("key param is not allowed, use ids instead")
+
         params["include_docs"] = True
         if prefix is not None:
             if ids is not None or create:
@@ -150,7 +162,7 @@ class View(RemoteView):
             params["endkey"] = f'"{prefix}{self.prefix_sentinel}"'
 
         response = await (
-            self.get(**params) if ids is None else self.post(ids, **params)
+            self.get(**params) if ids is None else self.post(keys=ids, **params)
         )
 
         for doc in response.docs(create=create, include_ddocs=include_ddocs):
