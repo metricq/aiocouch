@@ -67,6 +67,7 @@ class DesignDocument(Document):
         view: str,
         map_function: str,
         reduce_function: Optional[str] = None,
+        *,
         exists_ok: bool = False,
     ) -> View:
         if "views" not in self:
