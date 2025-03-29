@@ -63,6 +63,7 @@ class FindRequest:
         self,
         database: "database.Database",
         selector: Any,
+        *,
         limit: Optional[int] = None,
         **params: Any,
     ):
