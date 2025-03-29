@@ -36,7 +36,7 @@ async def test_null_view_ids(filled_database_with_view: Database) -> None:
     assert values[3] == "foo2"
 
 
-async def test_null_view_ids(filled_database_with_view: Database) -> None:
+async def test_null_view_mixed_ids(filled_database_with_view: Database) -> None:
     values = [
         key
         async for key in filled_database_with_view.view("test_ddoc", "null_view").ids(
