@@ -86,7 +86,7 @@ class Database(RemoteDatabase):
             yield key
 
     async def create(
-        self, id: str, exists_ok: bool = False, data: Optional[JsonDict] = None
+        self, id: str, *, exists_ok: bool = False, data: Optional[JsonDict] = None
     ) -> "Document":
         """Returns a local representation of a new document in the database
 
@@ -131,6 +131,7 @@ class Database(RemoteDatabase):
     async def docs(
         self,
         ids: Optional[List[str]] = None,
+        *,
         create: bool = False,
         prefix: Optional[str] = None,
         include_ddocs: bool = False,
@@ -158,7 +159,7 @@ class Database(RemoteDatabase):
             return
 
         async for doc in self.all_docs.docs(
-            ids, create, prefix, include_ddocs, **params
+            ids, create=create, prefix=prefix, include_ddocs=include_ddocs, **params
         ):
             yield doc
 
@@ -182,7 +183,7 @@ class Database(RemoteDatabase):
     def view(self, design_doc: str, view: str) -> View:
         return View(self, design_doc, view)
 
-    async def design_doc(self, id: str, exists_ok: bool = False) -> DesignDocument:
+    async def design_doc(self, id: str, *, exists_ok: bool = False) -> DesignDocument:
         ddoc = DesignDocument(self, id)
 
         if exists_ok:
@@ -197,7 +198,7 @@ class Database(RemoteDatabase):
         return ddoc
 
     async def find(
-        self, selector: Any, limit: Optional[int] = None, **params: Any
+        self, selector: Any, *, limit: Optional[int] = None, **params: Any
     ) -> AsyncGenerator["Document", None]:
         """Fetch documents based on search criteria
 
@@ -218,7 +219,7 @@ class Database(RemoteDatabase):
         if "fields" in params.keys():
             raise ValueError("The fields parameter isn't supported")
 
-        async for doc in FindRequest(self, selector, limit, **params):
+        async for doc in FindRequest(self, selector, limit=limit, **params):
             yield doc
 
     async def index(self, index: JsonDict, **kwargs: Any) -> JsonDict:
@@ -238,7 +239,7 @@ class Database(RemoteDatabase):
 
     @_returns_async_context_manager
     def update_docs(
-        self, ids: List[str] = [], create: bool = False
+        self, ids: List[str] = [], *, create: bool = False
     ) -> AsyncContextManager[BulkUpdateOperation]:
         """Update documents in bulk.
 
@@ -250,7 +251,7 @@ class Database(RemoteDatabase):
 
         """
 
-        return BulkUpdateOperation(self, ids, create)
+        return BulkUpdateOperation(self, ids, create=create)
 
     @_returns_async_context_manager
     def create_docs(
@@ -279,7 +280,7 @@ class Database(RemoteDatabase):
         return await self.get(id)
 
     async def get(
-        self, id: str, default: Optional[JsonDict] = None, *, rev: Optional[str] = None
+        self, id: str, *, default: Optional[JsonDict] = None, rev: Optional[str] = None
     ) -> Document:
         """Returns the document with the given id
 
@@ -327,7 +328,7 @@ class Database(RemoteDatabase):
         return await self._get()
 
     async def changes(
-        self, last_event_id: Optional[str] = None, **params: Any
+        self, *, last_event_id: Optional[str] = None, **params: Any
     ) -> AsyncGenerator[BaseChangeEvent, None]:
         """Listens for events made to documents of this database
 

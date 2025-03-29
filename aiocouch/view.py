@@ -64,6 +64,7 @@ class ViewResponse:
 
     def docs(
         self,
+        *,
         create: bool = False,
         include_ddocs: bool = False,
     ) -> Generator[Document, None, None]:
@@ -117,6 +118,7 @@ class View(RemoteView):
     async def ids(
         self,
         ids: Optional[List[str]] = None,
+        *,
         prefix: Optional[str] = None,
         **params: Any,
     ) -> AsyncGenerator[str, None]:
@@ -140,6 +142,7 @@ class View(RemoteView):
     async def docs(
         self,
         ids: Optional[List[str]] = None,
+        *,
         create: bool = False,
         prefix: Optional[str] = None,
         include_ddocs: bool = False,

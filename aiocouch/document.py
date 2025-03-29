@@ -99,7 +99,7 @@ class Document(RemoteDocument):
         )
 
     async def fetch(
-        self, discard_changes: bool = False, *, rev: Optional[str] = None
+        self, *, discard_changes: bool = False, rev: Optional[str] = None
     ) -> None:
         """Retrieves the document data from the server
 
@@ -147,7 +147,7 @@ class Document(RemoteDocument):
 
         return None
 
-    async def delete(self, discard_changes: bool = False) -> HTTPResponse:
+    async def delete(self, *, discard_changes: bool = False) -> HTTPResponse:
         """Marks the document as deleted on the server
 
         Calling this method deletes the local data and marks document as deleted on
