@@ -61,6 +61,7 @@ jobs:
         if: ${{ matrix.python-version == '3.12' && matrix.couchdb == '3.4' }}
         with:
           name: Python ${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
     services:
       couchdb:
         image: couchdb:${{ matrix.couchdb }}
