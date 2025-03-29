@@ -119,7 +119,7 @@ class BulkOperation:
         for doc in self._docs:
             yield doc
 
-    def create(self, id: str, data: Optional[JsonDict] = None) -> Document:
+    def create(self, id: str, *, data: Optional[JsonDict] = None) -> Document:
         """Create a new document as part of the bulk operation
 
         :param id: the id of the document
@@ -203,7 +203,11 @@ class BulkUpdateOperation(BulkOperation):
     """
 
     def __init__(
-        self, database: "database.Database", ids: List[str] = [], create: bool = False
+        self,
+        database: "database.Database",
+        ids: List[str] = [],
+        *,
+        create: bool = False,
     ):
         super().__init__(database=database)
         self._ids = ids

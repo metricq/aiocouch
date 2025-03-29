@@ -78,7 +78,7 @@ class CouchDB:
         await self._server.close()
 
     async def create(
-        self, id: str, exists_ok: bool = False, **params: Any
+        self, id: str, *, exists_ok: bool = False, **params: Any
     ) -> "Database":
         """Creates a new database on the server
 
