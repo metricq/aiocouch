@@ -83,14 +83,19 @@ async def test_create_existing_view(filled_database_with_view: Database) -> None
     ddoc = await filled_database_with_view.design_doc("test_ddoc", exists_ok=True)
 
     with pytest.raises(KeyError):
-        await ddoc.create_view("null_view", "function (doc) { emit(doc._id, null); }")
+        await ddoc.create_view(
+            "null_view",
+            map_function="function (doc) { emit(doc._id, null); }",
+        )
 
 
 async def test_create_view_with_reduce(database: Database) -> None:
     ddoc = await database.design_doc("my_test_ddoc")
 
     await ddoc.create_view(
-        "my_test_view", "function (doc) { emit(doc._id, null); }", "_count"
+        "my_test_view",
+        map_function="function (doc) { emit(doc._id, null); }",
+        reduce_function="_count",
     )
 
 

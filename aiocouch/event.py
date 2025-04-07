@@ -84,7 +84,7 @@ class ChangedEvent(BaseChangeEvent):
             # if in the request include_docs was given, we can create the
             # document on the spot...
             return document.Document(
-                self.database, self.json["doc"]["_id"], self.json["doc"]
+                self.database, self.json["doc"]["_id"], data=self.json["doc"]
             )
         except KeyError:
             # ...otherwise, we fetch the document contents from the server

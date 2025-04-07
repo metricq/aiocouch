@@ -62,7 +62,7 @@ class Document(RemoteDocument):
     """
 
     def __init__(
-        self, database: "database.Database", id: str, data: Optional[JsonDict] = None
+        self, database: "database.Database", id: str, *, data: Optional[JsonDict] = None
     ):
         super().__init__(database, id)
         self._data: JsonDict = data if data is not None else {}

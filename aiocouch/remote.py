@@ -88,6 +88,7 @@ class RemoteServer:
     def __init__(
         self,
         server: str,
+        *,
         user: Optional[str] = None,
         password: Optional[str] = None,
         cookie: Optional[str] = None,
@@ -98,17 +99,20 @@ class RemoteServer:
         headers = {"Cookie": "AuthSession=" + cookie} if cookie else None
         self._http_session = aiohttp.ClientSession(headers=headers, auth=auth, **kwargs)
 
-    async def _get(self, path: str, params: Optional[JsonDict] = None) -> RequestResult:
+    async def _get(
+        self, path: str, *, params: Optional[JsonDict] = None
+    ) -> RequestResult:
         return await self._request("GET", path, params=params)
 
     async def _get_bytes(
-        self, path: str, params: Optional[JsonDict] = None
+        self, path: str, *, params: Optional[JsonDict] = None
     ) -> RequestResult:
         return await self._request("GET", path, params=params, return_json=False)
 
     async def _put(
         self,
         path: str,
+        *,
         data: Optional[JsonDict] = None,
         params: Optional[JsonDict] = None,
     ) -> RequestResult:
@@ -117,6 +121,7 @@ class RemoteServer:
     async def _put_bytes(
         self,
         path: str,
+        *,
         data: bytes,
         content_type: str,
         params: Optional[JsonDict] = None,
@@ -130,18 +135,19 @@ class RemoteServer:
         )
 
     async def _post(
-        self, path: str, data: JsonDict, params: Optional[JsonDict] = None
+        self, path: str, *, data: JsonDict, params: Optional[JsonDict] = None
     ) -> RequestResult:
         return await self._request("POST", path, json=data, params=params)
 
     async def _delete(
-        self, path: str, params: Optional[JsonDict] = None
+        self, path: str, *, params: Optional[JsonDict] = None
     ) -> RequestResult:
         return await self._request("DELETE", path, params=params)
 
     async def _head(
         self,
         path: str,
+        *,
         params: Optional[JsonDict] = None,
         **kwargs: Any,
     ) -> RequestResult:
@@ -151,6 +157,7 @@ class RemoteServer:
         self,
         method: str,
         path: str,
+        *,
         params: Optional[JsonDict] = None,
         return_json: bool = True,
         **kwargs: Any,
@@ -184,6 +191,7 @@ class RemoteServer:
         self,
         method: str,
         path: str,
+        *,
         params: Optional[JsonDict] = None,
         **kwargs: Any,
     ) -> AsyncGenerator[JsonDict, None]:
@@ -213,7 +221,7 @@ class RemoteServer:
     @raises(401, "Invalid credentials")
     @raises(403, "Access forbidden: {reason}")
     async def _all_dbs(self, **params: Any) -> List[str]:
-        _, json = await self._get("/_all_dbs", params)
+        _, json = await self._get("/_all_dbs", params=params)
         assert not isinstance(json, bytes)
         return cast(List[str], json)
 
@@ -292,7 +300,9 @@ class RemoteDatabase:
     @raises(415, "Bad Content-Type value")
     async def _bulk_get(self, docs: List[str], **params: Any) -> JsonDict:
         _, json = await self._remote._post(
-            f"{self.endpoint}/_bulk_get", {"docs": docs}, params
+            f"{self.endpoint}/_bulk_get",
+            data={"docs": docs},
+            params=params,
         )
         assert not isinstance(json, bytes)
         return json
@@ -303,7 +313,10 @@ class RemoteDatabase:
     @raises(417, "At least one document was rejected by the validation function")
     async def _bulk_docs(self, docs: List[JsonDict], **data: Any) -> JsonDict:
         data["docs"] = docs
-        _, json = await self._remote._post(f"{self.endpoint}/_bulk_docs", data)
+        _, json = await self._remote._post(
+            f"{self.endpoint}/_bulk_docs",
+            data=data,
+        )
         assert not isinstance(json, bytes)
         return json
 
@@ -313,7 +326,10 @@ class RemoteDatabase:
     @raises(500, "Query execution failed", RuntimeError)
     async def _find(self, selector: Any, **data: Any) -> JsonDict:
         data["selector"] = selector
-        _, json = await self._remote._post(f"{self.endpoint}/_find", data)
+        _, json = await self._remote._post(
+            f"{self.endpoint}/_find",
+            data=data,
+        )
         assert not isinstance(json, bytes)
         return json
 
@@ -324,7 +340,10 @@ class RemoteDatabase:
     @raises(500, "Execution error")
     async def _index(self, index: JsonDict, **data: Any) -> JsonDict:
         data["index"] = index
-        _, json = await self._remote._post(f"{self.endpoint}/_index", data)
+        _, json = await self._remote._post(
+            f"{self.endpoint}/_index",
+            data=data,
+        )
         assert not isinstance(json, bytes)
         return json
 
@@ -338,7 +357,10 @@ class RemoteDatabase:
     @raises(401, "Invalid credentials")
     @raises(403, "Access forbidden: {reason}")
     async def _put_security(self, doc: JsonDict) -> JsonDict:
-        _, json = await self._remote._put(f"{self.endpoint}/_security", doc)
+        _, json = await self._remote._put(
+            f"{self.endpoint}/_security",
+            data=doc,
+        )
         assert not isinstance(json, bytes)
         return json
 
@@ -411,7 +433,10 @@ class RemoteDocument:
     @raises(403, "Access forbidden: {reason}")
     @raises(404, "Document {id} was not found")
     async def _get(self, **params: Any) -> JsonDict:
-        _, json = await self._database._remote._get(self.endpoint, params)
+        _, json = await self._database._remote._get(
+            self.endpoint,
+            params=params,
+        )
         assert not isinstance(json, bytes)
         return json
 
@@ -427,7 +452,11 @@ class RemoteDocument:
     async def _put(
         self, data: JsonDict, **params: Any
     ) -> Tuple[HTTPResponse, JsonDict]:
-        response, json = await self._database._remote._put(self.endpoint, data, params)
+        response, json = await self._database._remote._put(
+            self.endpoint,
+            data=data,
+            params=params,
+        )
         assert not isinstance(json, bytes)
         return (response, json)
 
@@ -440,7 +469,10 @@ class RemoteDocument:
     )
     async def _delete(self, rev: str, **params: Any) -> Tuple[HTTPResponse, JsonDict]:
         params["rev"] = rev
-        response, json = await self._database._remote._delete(self.endpoint, params)
+        response, json = await self._database._remote._delete(
+            self.endpoint,
+            params=params,
+        )
         assert not isinstance(json, bytes)
         return (response, json)
 
@@ -459,7 +491,10 @@ class RemoteDocument:
         self, destination: str, **params: Any
     ) -> Tuple[HTTPResponse, JsonDict]:
         response, json = await self._database._remote._request(
-            "COPY", self.endpoint, params=params, headers={"Destination": destination}
+            "COPY",
+            self.endpoint,
+            params=params,
+            headers={"Destination": destination},
         )
         assert not isinstance(json, bytes)
         return (response, json)
@@ -514,7 +549,8 @@ class RemoteAttachment:
     @raises(404, "Document '{document_id}' or attachment '{id}' doesn't exists")
     async def _get(self, **params: Any) -> bytes:
         response, data = await self._document._database._remote._get_bytes(
-            self.endpoint, params
+            self.endpoint,
+            params=params,
         )
         self.content_type = response.headers["Content-Type"]
         assert isinstance(data, bytes)
@@ -532,7 +568,10 @@ class RemoteAttachment:
     ) -> JsonDict:
         params["rev"] = rev
         _, json = await self._document._database._remote._put_bytes(
-            self.endpoint, data, content_type, params
+            self.endpoint,
+            data=data,
+            content_type=content_type,
+            params=params,
         )
         self.content_type = content_type
         assert not isinstance(json, bytes)
@@ -547,7 +586,10 @@ class RemoteAttachment:
     )
     async def _delete(self, rev: str, **params: Any) -> JsonDict:
         params["rev"] = rev
-        _, json = await self._document._database._remote._delete(self.endpoint, params)
+        _, json = await self._document._database._remote._delete(
+            self.endpoint,
+            params=params,
+        )
         self.content_type = None
         assert not isinstance(json, bytes)
         return json
@@ -572,7 +614,10 @@ class RemoteView:
     @raises(403, "Access forbidden: {reason}")
     @raises(404, "Specified database, design document or view is missing")
     async def _get(self, **params: Any) -> JsonDict:
-        _, json = await self._database._remote._get(self.endpoint, params)
+        _, json = await self._database._remote._get(
+            self.endpoint,
+            params=params,
+        )
         assert not isinstance(json, bytes)
         return json
 
@@ -582,7 +627,9 @@ class RemoteView:
     @raises(404, "Specified database, design document or view is missing")
     async def _post(self, keys: List[str], **params: Any) -> JsonDict:
         _, json = await self._database._remote._post(
-            self.endpoint, {"keys": keys}, params
+            self.endpoint,
+            data={"keys": keys},
+            params=params,
         )
         assert not isinstance(json, bytes)
         return json
