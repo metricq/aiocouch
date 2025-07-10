@@ -39,6 +39,7 @@ from typing import (
     Optional,
     Type,
     TypeVar,
+    Union,
     cast,
 )
 
@@ -112,10 +113,16 @@ class ExpectationFailedError(ValueError):
     pass
 
 
+class RemoteResponseError(aiohttp.ClientResponseError):
+    def __init__(self, reason: Union[str, None], *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.reason = reason
+
+
 def raise_for_endpoint(
     endpoint: Endpoint,
     message: str,
-    exception: aiohttp.ClientResponseError,
+    exception: RemoteResponseError,
     exception_type: Optional[Type[Exception]] = None,
 ) -> NoReturn:
     if exception_type is None:
@@ -144,6 +151,9 @@ def raise_for_endpoint(
     message_input = {}
 
     with suppress(AttributeError):
+        message_input["reason"] = exception.reason
+    message_input["reason"] = message_input.get("reason", exception.message)
+    with suppress(AttributeError):
         message_input["id"] = endpoint.id
         message_input["endpoint"] = endpoint.endpoint
         message_input["rev"] = cast(str, endpoint._data.get("_rev"))
@@ -165,7 +175,7 @@ def raises(
         async def wrapper(endpoint: Endpoint, *args: Any, **kwargs: Any) -> Any:
             try:
                 return await func(endpoint, *args, **kwargs)
-            except aiohttp.ClientResponseError as exception:
+            except RemoteResponseError as exception:
                 if status == exception.status:
                     raise_for_endpoint(endpoint, message, exception, exception_type)
                 raise exception
@@ -186,7 +196,7 @@ def generator_raises(
             try:
                 async for data in func(endpoint, *args, **kwargs):
                     yield data
-            except aiohttp.ClientResponseError as exception:
+            except RemoteResponseError as exception:
                 if status == exception.status:
                     raise_for_endpoint(endpoint, message, exception, exception_type)
                 raise exception

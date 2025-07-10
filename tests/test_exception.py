@@ -2,7 +2,6 @@ from typing import AsyncGenerator, NoReturn, cast
 
 import pytest
 from aiohttp.client import RequestInfo
-from aiohttp.client_exceptions import ClientResponseError
 
 from aiocouch.couchdb import JsonDict
 from aiocouch.exception import (
@@ -12,6 +11,7 @@ from aiocouch.exception import (
     ForbiddenError,
     NotFoundError,
     PreconditionFailedError,
+    RemoteResponseError,
     UnauthorizedError,
     UnsupportedMediaTypeError,
     generator_raises,
@@ -27,49 +27,49 @@ class CustomError(Exception):
 
 
 class DummyEndpoint:
-    @property
-    def endpoint(self) -> str:
-        return "endpoint"
-
     @raises(400, "bad thing")
     async def raise_bad_request(self) -> NoReturn:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=400)
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=400)
 
     @raises(401, "bad thing")
     async def raise_unauthorized(self) -> NoReturn:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=401)
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=401)
 
-    @raises(403, "bad thing")
+    @raises(403, "Access forbidden: {reason}")
     async def raise_forbidden(self) -> NoReturn:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=403)
+        raise RemoteResponseError("a reason", cast(RequestInfo, None), (), status=403)
+
+    @raises(403, "Access forbidden: None")
+    async def raise_forbidden_without_reason(self) -> NoReturn:
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=403)
 
     @raises(404, "bad thing")
     async def raise_not_found(self) -> NoReturn:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=404)
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=404)
 
     @raises(409, "bad thing")
     async def raise_conflict(self) -> NoReturn:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=409)
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=409)
 
     @raises(412, "bad thing")
     async def raise_precondition_failed(self) -> NoReturn:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=412)
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=412)
 
     @raises(415, "bad thing")
     async def raise_unsupported_media(self) -> NoReturn:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=415)
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=415)
 
     @raises(417, "bad thing")
     async def raise_expectation_failed(self) -> NoReturn:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=417)
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=417)
 
     @raises(500, "bad thing", CustomError)
     async def raise_custom(self) -> NoReturn:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=500)
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=500)
 
     @generator_raises(400, "bad thing")
     async def raise_in_generator(self) -> AsyncGenerator[JsonDict, None]:
-        raise ClientResponseError(cast(RequestInfo, None), (), status=400)
+        raise RemoteResponseError(None, cast(RequestInfo, None), (), status=400)
         yield None
 
 
@@ -81,7 +81,7 @@ async def test_raises() -> None:
     with pytest.raises(UnauthorizedError):
         await dummy.raise_unauthorized()
 
-    with pytest.raises(ForbiddenError):
+    with pytest.raises(ForbiddenError, match="Access forbidden: a reason"):
         await dummy.raise_forbidden()
 
     with pytest.raises(NotFoundError):
