@@ -210,6 +210,7 @@ async def test_override_conflict(database: Database) -> None:
         await doc2.save()
         assert False
     except ConflictError:
+        assert doc1.rev is not None
         doc2.rev = doc1.rev
         await doc2.save()
 
