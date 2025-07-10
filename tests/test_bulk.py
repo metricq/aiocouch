@@ -226,3 +226,28 @@ async def test_no_bulk_request_on_exception(database: Database, doc: Document) -
     # check that the changes were not send to the server
     doc2 = await database.create(doc.id)
     assert "zebras" not in doc2
+
+
+async def test_bulk_get(filled_database: Database) -> None:
+    response = await filled_database._bulk_get(
+        [{"id": id} for id in ["foo", "foo2", "baz", "baz2", "bar"]]
+    )
+
+    results = response["results"]
+
+    assert len(results) == 5
+
+    assert results[0]["id"] == "foo"
+    assert "ok" in results[0]["docs"][0]
+
+    assert results[1]["id"] == "foo2"
+    assert "ok" in results[1]["docs"][0]
+
+    assert results[2]["id"] == "baz"
+    assert "ok" in results[2]["docs"][0]
+
+    assert results[3]["id"] == "baz2"
+    assert "ok" in results[3]["docs"][0]
+
+    assert results[4]["id"] == "bar"
+    assert "error" in results[4]["docs"][0]

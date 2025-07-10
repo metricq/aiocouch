@@ -298,7 +298,7 @@ class RemoteDatabase:
     @raises(403, "Access forbidden: {reason}")
     @raises(404, "Invalid database name")
     @raises(415, "Bad Content-Type value")
-    async def _bulk_get(self, docs: List[str], **params: Any) -> JsonDict:
+    async def _bulk_get(self, docs: List[JsonDict], **params: Any) -> JsonDict:
         _, json = await self._remote._post(
             f"{self.endpoint}/_bulk_get",
             data={"docs": docs},
