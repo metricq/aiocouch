@@ -367,8 +367,8 @@ class Document(RemoteDocument):
 
 
 class SecurityDocument(Document):
-    def __init__(self, database: "database.Database"):
-        super().__init__(database, "_security")
+    def __init__(self, database: "database.Database", **kwargs: Any):
+        super().__init__(database, "_security", **kwargs)
         del self._data["_id"]
 
     async def __aenter__(self) -> "SecurityDocument":
