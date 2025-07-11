@@ -36,7 +36,11 @@ from .document import Document
 
 class FindRequestChunk:
     def __init__(
-        self, database: "database.Database", data: Dict[str, Any], pagination_size: int
+        self,
+        database: "database.Database",
+        *,
+        data: Dict[str, Any],
+        pagination_size: int,
     ):
         self.database = database
         self.data = data
@@ -63,6 +67,7 @@ class FindRequest:
         self,
         database: "database.Database",
         selector: Any,
+        *,
         limit: Optional[int] = None,
         **params: Any,
     ):
@@ -77,10 +82,12 @@ class FindRequest:
         while True:
             chunk = FindRequestChunk(
                 self.database,
-                await self.database._find(
-                    self.selector, limit=pagination_size, **self.params
+                data=await self.database._find(
+                    self.selector,
+                    limit=pagination_size,
+                    **self.params,
                 ),
-                pagination_size,
+                pagination_size=pagination_size,
             )
 
             self.params["bookmark"] = chunk.bookmark

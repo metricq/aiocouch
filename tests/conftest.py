@@ -143,9 +143,18 @@ async def filled_database_with_view(
     filled_database: Database,
 ) -> AsyncGenerator[Database, None]:
     ddoc = await filled_database.design_doc("test_ddoc")
-    await ddoc.create_view("null_view", "function (doc) { emit(doc._id, null); }")
-    await ddoc.create_view("full_view", "function (doc) { emit(doc._id, doc); }")
-    await ddoc.create_view("bar_view", "function (doc) { emit(doc._id, doc.bar); }")
+    await ddoc.create_view(
+        "null_view",
+        map_function="function (doc) { emit(doc._id, null); }",
+    )
+    await ddoc.create_view(
+        "full_view",
+        map_function="function (doc) { emit(doc._id, doc); }",
+    )
+    await ddoc.create_view(
+        "bar_view",
+        map_function="function (doc) { emit(doc._id, doc.bar); }",
+    )
 
     yield filled_database
 

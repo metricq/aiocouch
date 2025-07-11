@@ -62,7 +62,7 @@ class Document(RemoteDocument):
     """
 
     def __init__(
-        self, database: "database.Database", id: str, data: Optional[JsonDict] = None
+        self, database: "database.Database", id: str, *, data: Optional[JsonDict] = None
     ):
         super().__init__(database, id)
         self._data: JsonDict = data if data is not None else {}
@@ -99,7 +99,7 @@ class Document(RemoteDocument):
         )
 
     async def fetch(
-        self, discard_changes: bool = False, *, rev: Optional[str] = None
+        self, *, discard_changes: bool = False, rev: Optional[str] = None
     ) -> None:
         """Retrieves the document data from the server
 
@@ -147,7 +147,7 @@ class Document(RemoteDocument):
 
         return None
 
-    async def delete(self, discard_changes: bool = False) -> HTTPResponse:
+    async def delete(self, *, discard_changes: bool = False) -> HTTPResponse:
         """Marks the document as deleted on the server
 
         Calling this method deletes the local data and marks document as deleted on
@@ -367,8 +367,8 @@ class Document(RemoteDocument):
 
 
 class SecurityDocument(Document):
-    def __init__(self, database: "database.Database"):
-        super().__init__(database, "_security")
+    def __init__(self, database: "database.Database", **kwargs: Any):
+        super().__init__(database, "_security", **kwargs)
         del self._data["_id"]
 
     async def __aenter__(self) -> "SecurityDocument":

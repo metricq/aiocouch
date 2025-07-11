@@ -1,6 +1,9 @@
+from typing import cast
+
 import pytest
 
 from aiocouch.database import Database
+from aiocouch.document import SecurityDocument
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -52,7 +55,7 @@ async def test_create_for_existing(filled_database: Database) -> None:
 
 
 async def test_create_for_existing_exists_true(filled_database: Database) -> None:
-    doc = await filled_database.create("foo", True)
+    doc = await filled_database.create("foo", exists_ok=True)
 
     assert doc["bar"] is True
     assert doc["_id"] == doc.id == "foo"
@@ -328,12 +331,26 @@ async def test_set_invalid_design_doc_key(filled_database_with_view: Database) -
 
 async def test_get_security(database: Database) -> None:
     sec = await database.security()
+    sec2 = SecurityDocument(cast(Database, None), data=await database._get_security())
 
     assert sec.members is None
+    assert sec2.members is None
     assert sec.admins is None
+    assert sec2.admins is None
 
     assert sec.member_roles is None or sec.member_roles == ["_admin"]
+    assert sec2.member_roles is None or sec2.member_roles == ["_admin"]
     assert sec.admin_roles is None or sec.admin_roles == ["_admin"]
+    assert sec2.admin_roles is None or sec2.admin_roles == ["_admin"]
+
+
+async def test_set_security(database: Database) -> None:
+    sec = await database.security()
+
+    result = await database._put_security(sec._data)
+
+    assert "ok" in result
+    assert result["ok"] is True
 
 
 async def test_security_add_members(database: Database) -> None:
