@@ -1,3 +1,7 @@
+# v4.0.1
+
+- CIing is hard :C
+
 # v4.0.0
 
 - Added `revs()` method to `Document` that allows to list all available revs of that document
